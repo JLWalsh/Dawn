@@ -1,0 +1,21 @@
+{
+  "name": "language",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/main.js",
+  "directories": {
+    "example": "examples"
+  },
+  "dependencies": {
+    "module-alias": "^2.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "_moduleAliases": {
+    "@dawn": "build/dawn"
+  }
+}

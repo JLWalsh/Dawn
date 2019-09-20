@@ -1,0 +1,18 @@
+# A simple unit test library
+
+module check {
+
+    export isEqualTo<T>(value: T, expected: T)
+        assert(value == expected)
+
+    export isTrue(value: boolean)
+        assert(value)
+
+    export isFalse(value: boolean)
+        assert(!value)
+
+    assert(assertion: boolean)
+        if (!assertion)
+            throw "Failed to satisfy assertion"
+
+}
