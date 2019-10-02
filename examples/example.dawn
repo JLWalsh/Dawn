@@ -1,0 +1,30 @@
+import math
+
+module example {
+
+    export object Rectangle {
+        height: int
+        width: int
+    }
+
+    export object Circle {
+        radius: int
+    }
+
+    export calculateArea(rectangle: Rectangle): float {
+        return rectangle.height * rectangle.width
+    }
+
+    export calculateArea(circle: Circle): float {
+        return circle.radius ^ 2f * math.PI
+    }
+
+}
+
+main() {
+   val rectangle = example.Rectangle { 10i, 20i }
+   val circle = example.Circle { radius: 20i }
+
+   print(example.calculateArea(rectangle))
+   print(example.calculateArea(circle))
+}
