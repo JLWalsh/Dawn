@@ -1,18 +1,21 @@
 import {Token, TokenType} from "@dawn/lexer/Token";
 import {Char} from "@dawn/lang/Char";
 import {SupportedNumbers} from "@dawn/lang/Numbers";
+import {keywords} from "@dawn/lexer/Keywords";
 
-export function tokenize(program: string): Token[] {
+export function tokenize(program: string): { tokens: Token[], errors: string[] } {
   const tokens: Token[] = [];
+  const errors: string[] = [];
   let position = 0;
   let tokenStartPosition = 0;
+  let recoverFromError = false;
 
   function isAtEnd() {
     return position >= program.length;
   }
 
   function peek() {
-    return program[position + 1];
+    return program[position];
   }
 
   function advance() {
@@ -36,9 +39,19 @@ export function tokenize(program: string): Token[] {
     tokens.push({ type, lexeme });
   }
 
+  function error(name: string) {
+    errors.push(name);
+    recoverFromError = true;
+  }
+
   while(!isAtEnd()) {
     tokenStartPosition = position;
     const char = advance();
+
+    if(recoverFromError) {
+      recover();
+      recoverFromError = false;
+    }
 
     switch(char) {
       case '{': addSingleToken(TokenType.BRACKET_OPEN); break;
@@ -48,12 +61,22 @@ export function tokenize(program: string): Token[] {
       case '*': addSingleToken(TokenType.STAR); break;
       case '^': addSingleToken(TokenType.UPTICK); break;
       case ':': addSingleToken(TokenType.COLON); break;
+      case '.': addSingleToken(TokenType.DOT); break;
       case '\n': break;
       case '\r': break;
       case ' ': break;
-      default:
-        if (Char.isAlpha(char)) {
+      case '-': {
+        if (Char.isNumber(peek())) {
+          parseNumber();
+          break;
+        }
 
+        addSingleToken(TokenType.HYPHEN);
+        break;
+      }
+      default: {
+        if (Char.isAlpha(char)) {
+          parseIdentifier();
           break;
         }
 
@@ -62,32 +85,60 @@ export function tokenize(program: string): Token[] {
           break;
         }
 
-        throw new Error(`Unrecognized character: ${char}`);
+        error(`Unrecognized character: ${char}`);
+      }
     }
   }
 
-  function parseNumber() {
-    while(Char.isNumber(peek()) && !isAtEnd()) {
+  function parseIdentifier() {
+    while(!isAtEnd() && Char.isAlpha(peek())) {
       advance();
     }
 
+    const lexeme = extractLexeme();
+    // TODO use null coalescing when Typescript 3.7 is released
+    const keyword = keywords[lexeme];
+    const type = keyword === undefined ? TokenType.IDENTIFIER : keyword;
+
+    tokens.push({ type, lexeme, value: lexeme });
+  }
+
+  function parseNumber() {
+    while(!isAtEnd() && Char.isNumber(peek())) {
+      advance();
+    }
+
+    let hasDecimals = false;
     if (match('.')) {
-      while(Char.isNumber(peek()) && !isAtEnd()) {
+      while(!isAtEnd() && Char.isNumber(peek())) {
+        hasDecimals = true;
         advance();
       }
     }
 
     if (peek() != SupportedNumbers.FLOAT && peek() != SupportedNumbers.INT) {
-      throw new Error(`Unspecified number type`);
+      error(`Unspecified number type`);
+      return;
     }
 
     const type = advance() as SupportedNumbers;
     const tokenType = type === SupportedNumbers.INT ? TokenType.INT_NUMBER : TokenType.FLOAT_NUMBER;
+
+    if (tokenType === TokenType.INT_NUMBER && hasDecimals) {
+      error(`Int may not contain decimals`);
+      return;
+    }
 
     const lexeme = extractLexeme();
     const value = Number(program.substring(tokenStartPosition, position - 1));
     tokens.push({ type: tokenType, lexeme, value });
   }
 
-  return [];
+  function recover() {
+    while(peek() != '\n' && !isAtEnd()) {
+      advance();
+    }
+  }
+
+  return { tokens, errors };
 }
