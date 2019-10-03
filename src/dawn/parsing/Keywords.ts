@@ -1,4 +1,4 @@
-import {TokenType} from "@dawn/lexer/Token";
+import {TokenType} from "@dawn/parsing/Token";
 
 interface Keywords {
   [keyword: string]: TokenType;

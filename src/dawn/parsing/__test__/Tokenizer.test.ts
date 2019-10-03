@@ -1,6 +1,6 @@
 import 'module-alias/register';
-import {tokenize} from "@dawn/lexer/Tokenizer";
-import {Token, TokenType} from "@dawn/lexer/Token";
+import {tokenize} from "@dawn/parsing/Tokenizer";
+import {Token, TokenType} from "@dawn/parsing/Token";
 
 describe('Tokenizer', () => {
 

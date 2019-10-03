@@ -1,6 +1,6 @@
 import 'module-alias/register';
 import fs from 'fs';
-import {tokenize} from "@dawn/lexer/Tokenizer";
+import {tokenize} from "@dawn/parsing/Tokenizer";
 
 const program = fs.readFileSync("example.dawn", "utf-8");
 

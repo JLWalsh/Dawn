@@ -1,55 +1,28 @@
-import {Token, TokenType} from "@dawn/lexer/Token";
+import {Token, TokenType} from "@dawn/parsing/Token";
 import {Char} from "@dawn/lang/Char";
 import {SupportedNumbers} from "@dawn/lang/Numbers";
-import {keywords} from "@dawn/lexer/Keywords";
+import {keywords} from "@dawn/parsing/Keywords";
+import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 
 export function tokenize(program: string): { tokens: Token[], errors: string[] } {
+  const reader = new StringIterableReader(program);
   const tokens: Token[] = [];
   const errors: string[] = [];
-  let position = 0;
-  let lineNumber = 0;
-  let columnNumber = 0;
-  let tokenStartPosition = 0;
   let recoverFromError = false;
 
-  function isAtEnd() {
-    return position >= program.length;
-  }
-
-  function peek() {
-    return program[position];
-  }
-
-  function advance() {
-    columnNumber++;
-    return program[position++];
-  }
-
-  function match(nextChar: string) {
-    if (peek() != nextChar) {
-      return false;
-    }
-
-    return advance();
-  }
-
-  function extractLexeme() {
-    return program.substring(tokenStartPosition, position);
-  }
-
   function addSingleToken(type: TokenType) {
-    const lexeme = extractLexeme();
+    const lexeme = reader.extract() as string;
     tokens.push({ type, lexeme });
   }
 
   function error(name: string) {
-    errors.push(`(${lineNumber + 1}, ${columnNumber}) ${name}`);
+    errors.push(`(${reader.getLine() + 1}, ${reader.getColumn()}) ${name}`);
     recoverFromError = true;
   }
 
-  while(!isAtEnd()) {
-    tokenStartPosition = position;
-    const char = advance();
+  while(!reader.isAtEnd()) {
+    reader.resetExtract();
+    const char = reader.advance();
 
     if(recoverFromError) {
       recover();
@@ -67,11 +40,11 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
       case '.': addSingleToken(TokenType.DOT); break;
       case '=': addSingleToken(TokenType.EQUALS); break;
       case ',': addSingleToken(TokenType.COMMA); break;
-      case '\n': newline(); break;
+      case '\n': break;
       case '\r': break;
       case ' ': break;
       case '-': {
-        if (Char.isNumber(peek())) {
+        if (Char.isNumber(reader.peek())) {
           parseNumber();
           break;
         }
@@ -96,11 +69,11 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
   }
 
   function parseIdentifier() {
-    while(!isAtEnd() && Char.isAlpha(peek())) {
-      advance();
+    while(!reader.isAtEnd() && Char.isAlpha(reader.peek())) {
+      reader.advance();
     }
 
-    const lexeme = extractLexeme();
+    const lexeme = reader.extract() as string;
     // TODO use null coalescing when Typescript 3.7 is released
     const keyword = keywords[lexeme];
     const type = keyword === undefined ? TokenType.IDENTIFIER : keyword;
@@ -109,24 +82,24 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
   }
 
   function parseNumber() {
-    while(!isAtEnd() && Char.isNumber(peek())) {
-      advance();
+    while(!reader.isAtEnd() && Char.isNumber(reader.peek())) {
+      reader.advance();
     }
 
     let hasDecimals = false;
-    if (match('.')) {
-      while(!isAtEnd() && Char.isNumber(peek())) {
+    if (reader.match('.')) {
+      while(!reader.isAtEnd() && Char.isNumber(reader.peek())) {
         hasDecimals = true;
-        advance();
+        reader.advance();
       }
     }
 
-    if (peek() != SupportedNumbers.FLOAT && peek() != SupportedNumbers.INT) {
+    if (reader.peek() != SupportedNumbers.FLOAT && reader.peek() != SupportedNumbers.INT) {
       error(`Unspecified number type`);
       return;
     }
 
-    const type = advance() as SupportedNumbers;
+    const type = reader.advance() as SupportedNumbers;
     const tokenType = type === SupportedNumbers.INT ? TokenType.INT_NUMBER : TokenType.FLOAT_NUMBER;
 
     if (tokenType === TokenType.INT_NUMBER && hasDecimals) {
@@ -134,19 +107,14 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
       return;
     }
 
-    const lexeme = extractLexeme();
-    const value = Number(program.substring(tokenStartPosition, position - 1));
+    const lexeme = reader.extract() as string;
+    const value = Number(lexeme.substr(0, lexeme.length - 1));
     tokens.push({ type: tokenType, lexeme, value });
   }
 
-  function newline() {
-    lineNumber++;
-    columnNumber = 0;
-  }
-
   function recover() {
-    while(peek() != '\n' && !isAtEnd()) {
-      advance();
+    while(reader.peek() != '\n' && !reader.isAtEnd()) {
+      reader.advance();
     }
   }
 
