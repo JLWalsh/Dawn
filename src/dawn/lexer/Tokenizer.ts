@@ -7,6 +7,8 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
   const tokens: Token[] = [];
   const errors: string[] = [];
   let position = 0;
+  let lineNumber = 0;
+  let columnNumber = 0;
   let tokenStartPosition = 0;
   let recoverFromError = false;
 
@@ -19,6 +21,7 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
   }
 
   function advance() {
+    columnNumber++;
     return program[position++];
   }
 
@@ -40,7 +43,7 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
   }
 
   function error(name: string) {
-    errors.push(name);
+    errors.push(`(${lineNumber + 1}, ${columnNumber}) ${name}`);
     recoverFromError = true;
   }
 
@@ -62,7 +65,9 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
       case '^': addSingleToken(TokenType.UPTICK); break;
       case ':': addSingleToken(TokenType.COLON); break;
       case '.': addSingleToken(TokenType.DOT); break;
-      case '\n': break;
+      case '=': addSingleToken(TokenType.EQUALS); break;
+      case ',': addSingleToken(TokenType.COMMA); break;
+      case '\n': newline(); break;
       case '\r': break;
       case ' ': break;
       case '-': {
@@ -132,6 +137,11 @@ export function tokenize(program: string): { tokens: Token[], errors: string[] }
     const lexeme = extractLexeme();
     const value = Number(program.substring(tokenStartPosition, position - 1));
     tokens.push({ type: tokenType, lexeme, value });
+  }
+
+  function newline() {
+    lineNumber++;
+    columnNumber = 0;
   }
 
   function recover() {

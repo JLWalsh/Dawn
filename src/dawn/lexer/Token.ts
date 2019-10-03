@@ -19,6 +19,8 @@ export enum TokenType {
   DOT,
   COLON,
   HYPHEN,
+  EQUALS,
+  COMMA,
 
   STAR,
   UPTICK,

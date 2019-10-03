@@ -6,7 +6,35 @@ describe('Tokenizer', () => {
 
   describe('given multiple tokens', () => {
     it('should parse multiple tokens', () => {
-      test('import helloworld \n 20i-40f object')
+      test('import helloworld \n 20i-40.123f object', {
+       tokens: [
+         {
+           type: TokenType.IMPORT,
+           value: 'import',
+           lexeme: 'import',
+         },
+         {
+           type: TokenType.IDENTIFIER,
+           value: 'helloworld',
+           lexeme: 'helloworld',
+         },
+         {
+           type: TokenType.INT_NUMBER,
+           value: 20,
+           lexeme: '20i',
+         },
+         {
+           type: TokenType.FLOAT_NUMBER,
+           value: -40.123,
+           lexeme: '-40.123f',
+         },
+         {
+           type: TokenType.OBJECT,
+           value: 'object',
+           lexeme: 'object',
+         },
+       ]
+      });
     });
   });
 
@@ -175,6 +203,24 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.UPTICK,
         lexeme: '^',
+      }],
+    });
+  });
+
+  it('should parse =', () => {
+    test('=', {
+      tokens: [{
+        type: TokenType.EQUALS,
+        lexeme: '=',
+      }],
+    });
+  });
+
+  it('should parse ,', () => {
+    test(',', {
+      tokens: [{
+        type: TokenType.COMMA,
+        lexeme: ',',
       }],
     });
   });
