@@ -19,7 +19,7 @@ export class StringIterableReader extends IterableReader<string> {
       this.newline();
     }
 
-    return super.advance();
+    return token;
   }
 
   extract(): ArrayLike<string> {
