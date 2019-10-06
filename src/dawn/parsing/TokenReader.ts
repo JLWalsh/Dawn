@@ -9,6 +9,10 @@ export class TokenReader extends IterableReader<Token> {
     super(tokens);
   }
 
+  peekAt(offset: number = 0) {
+    return this.content[this.getPosition() + offset];
+  }
+
   consume(tokenType: TokenType, errorIfNotPresent: string): Token {
     const token = this.match(tokenType);
     if(!token) {

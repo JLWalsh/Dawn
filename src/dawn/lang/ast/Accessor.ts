@@ -1,7 +1,7 @@
-import {Statement, StatementType} from "@dawn/lang/ast/Statement";
+import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
 
-export interface Accessor extends Statement {
-  type: StatementType.ACCESSOR,
+export interface Accessor extends AstNode {
+  type: AstNodeType.ACCESSOR,
   name: string;
   subAccessor?: Accessor;
 }

@@ -24,7 +24,7 @@ export enum TokenType {
   PLUS,
 
   // Equality
-  EQUALS,
+  EQUALS_EQUALS,
   BANG_EQUALS,
 
   // Comparison
@@ -37,6 +37,8 @@ export enum TokenType {
   FORWARD_SLASH,
   UPTICK,
   BANG,
+
+  EQUALS,
 }
 
 export interface Token {

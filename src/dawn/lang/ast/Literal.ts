@@ -1,8 +1,8 @@
-import {Statement, StatementType} from "@dawn/lang/ast/Statement";
+import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
 import {NativeType} from "@dawn/lang/NativeType";
 
-export interface LiteralExpression extends Statement {
-  type: StatementType.LITERAL;
+export interface LiteralExpression extends AstNode {
+  type: AstNodeType.LITERAL;
   value: any;
   valueType: NativeType;
 }

@@ -1,4 +1,4 @@
-import {Statement, StatementType} from "@dawn/lang/ast/Statement";
+import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
 import {Expression} from "@dawn/lang/ast/Expression";
 
 export enum UnaryOperator {
@@ -6,8 +6,8 @@ export enum UnaryOperator {
   MINUS = "-",
 }
 
-export interface UnaryExpression extends Statement {
-  type: StatementType.UNARY;
+export interface UnaryExpression extends AstNode {
+  type: AstNodeType.UNARY;
   operator: UnaryOperator;
   right: Expression;
 }

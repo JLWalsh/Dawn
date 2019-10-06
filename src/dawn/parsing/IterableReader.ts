@@ -15,6 +15,14 @@ export class IterableReader<T> {
     return this.content[this.position++];
   }
 
+  advanceOrThrow(errorMessage: string): T {
+    if (this.isAtEnd()) {
+      throw new Error(errorMessage);
+    }
+
+    return this.advance();
+  }
+
   peek(): T {
     return this.content[this.position];
   }

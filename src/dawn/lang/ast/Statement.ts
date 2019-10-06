@@ -1,28 +1,8 @@
-import {Token} from "@dawn/parsing/Token";
+import {Expression} from "@dawn/lang/ast/Expression";
+import {Return} from "@dawn/lang/ast/Return";
+import {ValDeclaration} from "@dawn/lang/ast/ValDeclaration";
 
-export enum StatementType {
-  PROGRAM,
-  IMPORT,
-  EXPORT,
-
-  OBJECT_DECLARATION,
-  MODULE_DECLARATION,
-  FUNCTION_DECLARATION,
-  VAL_DECLARATION,
-
-  EQUALITY,
-  COMPARISON,
-  BINARY,
-  UNARY,
-  LITERAL,
-
-  ACCESSOR,
-  VALACCESSOR,
-
-  INVOCATION,
-}
-
-export interface Statement {
-  type: StatementType;
-  reference: Token;
-}
+export type Statement =
+  | Expression
+  | Return
+  | ValDeclaration;

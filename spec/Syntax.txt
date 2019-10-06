@@ -19,11 +19,18 @@ objectvaldecl   -> IDENTIFIER ":" IDENTIFIER
 
 valdecl         -> "val" IDENTIFIER "=" expr
 
-funcdecl        -> IDENTIFIER "(" fundeclcarg* ")" (":" IDENTIFIER)? funcdeclbody
+
+funcdecl        -> IDENTIFIER "(" (fundeclcarg ","?)* ")" (":" IDENTIFIER)? funcdeclbody
 
 funcdeclarg     -> IDENTIFIER ":" IDENTIFIER
 
-funcdeclbody    -> "{" expr* "}"
+funcdeclbody    -> "{" statement* "}"
+
+statement       -> return
+                |  valdecl
+                |  expr
+
+return          -> expr
 
 expr            -> equality
 
@@ -40,10 +47,19 @@ unary           -> ( "!" | "-" ) unary
 
 literal         -> NUMBER | STRING | BOOLEAN
                 | "(" expression ")"
-                | valaccessor
+                | undefliteral
+
+undefliteral    -> valaccessor
+                 | inst
 
 accessor        -> IDENTIFIER ("." accessor)?
 
 valaccessor     -> accessor invocation?
+
+inst            -> accessor "{" ((keyinst | orderedinst) ","?)* "}"
+
+keyinst         -> IDENTIFIER ":" expr
+
+orderedinst     -> expr
 
 invocation      -> "(" (expr ","?)* ")"
