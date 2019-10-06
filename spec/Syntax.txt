@@ -1,45 +1,49 @@
 ### Dawn Syntax
 
-program -> (moduledecl | funcdecl)*
+program         -> (moduledecl | funcdecl)*
 
-import -> "import" accessor
+import          -> "import" accessor
 
-export -> decl
+export          -> decl
 
-decl -> objectdecl
-      | moduledecl
-      | funcdecl
-      | vardecl
+decl            -> objectdecl
+                | moduledecl
+                | funcdecl
+                | valdecl
 
-moduledecl -> "module" IDENTIFIER "{" (decl | export)* "}"
+moduledecl      -> "module" IDENTIFIER "{" (decl | export)* "}"
 
-objectdecl -> "object" IDENTIFIER "{" objectvaldecl* "}"
+objectdecl      -> "object" IDENTIFIER "{" objectvaldecl* "}"
 
-objectvaldecl -> IDENTIFIER ":" IDENTIFIER
+objectvaldecl   -> IDENTIFIER ":" IDENTIFIER
 
-vardecl -> "val" IDENTIFIER "=" expr
+valdecl         -> "val" IDENTIFIER "=" expr
 
-funcdecl -> IDENTIFIER "(" funcarg* ")" (":" IDENTIFIER)? funcbody
+funcdecl        -> IDENTIFIER "(" fundeclcarg* ")" (":" IDENTIFIER)? funcdeclbody
 
-funcarg -> IDENTIFIER ":" IDENTIFIER
+funcdeclarg     -> IDENTIFIER ":" IDENTIFIER
 
-funcbody -> "{" expr* "}"
+funcdeclbody    -> "{" expr* "}"
 
-expr     -> equality
+expr            -> equality
 
-equality       -> comparison ( ( "!=" | "==" ) comparison )*
+equality        -> comparison ( ( "!=" | "==" ) comparison )*
 
-comparison     -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )*
+comparison      -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )*
 
-addition       -> multiplication ( ( "-" | "+" ) multiplication )*
+addition        -> multiplication ( ( "-" | "+" ) multiplication )*
 
-multiplication -> unary ( ( "/" | "*" ) unary )*
+multiplication  -> unary ( ( "/" | "*" ) unary )*
 
-unary          -> ( "!" | "-" ) unary
-               | primary
+unary           -> ( "!" | "-" ) unary
+                | literal
 
-primary        -> NUMBER | STRING | BOOLEAN
-               | "(" expression ")"
-               | accessor
+literal         -> NUMBER | STRING | BOOLEAN
+                | "(" expression ")"
+                | valaccessor
 
-accessor -> IDENTIFIER ("." accessor)?
+accessor        -> IDENTIFIER ("." accessor)?
+
+valaccessor     -> accessor invocation?
+
+invocation      -> "(" (expr ","?)* ")"

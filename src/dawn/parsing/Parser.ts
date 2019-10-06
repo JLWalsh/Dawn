@@ -1,171 +1,101 @@
-import {TokenType} from "@dawn/parsing/Token";
-import {ProgramExpression} from "@dawn/lang/ast/ProgramExpression";
-import {Expression} from "@dawn/lang/ast/Expression";
 import {TokenReader} from "@dawn/parsing/TokenReader";
-import {BinaryExpression} from "@dawn/lang/ast/BinaryExpression";
-import {UnaryExpression} from "@dawn/lang/ast/UnaryExpression";
-import {LiteralExpression} from "@dawn/lang/ast/LiteralExpression";
-import {GroupingExpression} from "@dawn/lang/ast/GroupingExpression";
-import {ValueType} from "@dawn/lang/ast/Value";
-import {EqualityExpression} from "@dawn/lang/ast/EqualityExpression";
-import {ComparisonExpression} from "@dawn/lang/ast/ComparisonExpression";
-import {Statement, StatementType} from "@dawn/lang/ast/Statement";
-import {VariableDeclaration} from "@dawn/lang/ast/statements/VariableDeclaration";
-import {VariableExpression} from "@dawn/lang/ast/VariableExpression";
-import {ModuleDeclaration} from "@dawn/lang/ast/statements/ModuleDeclaration";
+import {TokenType} from "@dawn/parsing/Token";
+import {Accessor} from "@dawn/lang/ast/Accessor";
+import {StatementType} from "@dawn/lang/ast/Statement";
+import {Expression} from "@dawn/lang/ast/Expression";
+import {LiteralExpression} from "@dawn/lang/ast/Literal";
+import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
+import {Invocation} from "@dawn/lang/ast/Invocation";
+import {BinaryExpression, findBinaryExpressionOperator} from "@dawn/lang/ast/BinaryExpression";
 
 function parse(reader: TokenReader) {
-  const programAst: ProgramExpression = { type: StatementType.PROGRAM, instructions: [] };
-  const errors: string[] = [];
 
-  function parseNext() {
-    try {
-      return declaration();
-    } catch(error) {
-      errors.push(error as string);
-      recoverFromError();
+  function expression(): Expression {
 
-      return null;
+  }
+
+  function multiplication(): Expression {
+    let left = unary();
+
+    while(reader.match(TokenType.FORWARD_SLASH, TokenType.STAR)) {
+      const operatorToken = reader.previous();
+      const operator = findBinaryExpressionOperator(operatorToken);
+      const right = unary();
+
+      left = {
+        type: StatementType.BINARY,
+        left, right,
+        reference: left.reference,
+        operator: { type: operator, reference: operatorToken }
+      } as BinaryExpression;
     }
-  }
-
-  function declaration(): Expression {
-    if (reader.match(TokenType.VAL)) {
-      return variableDeclaration();
-    }
-
-    if (reader.match(TokenType.MODULE)) {
-      return moduleDeclaration();
-    }
-
-    return expression();
-  }
-
-  function variableDeclaration(): VariableDeclaration {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected name for variable");
-    reader.consume(TokenType.EQUALS, "Expected initializer for variable");
-    const initializer = expression();
-
-    return { type: StatementType.VARIABLE_DECLARATION, name, initializer };
-  }
-
-  function moduleDeclaration(): ModuleDeclaration {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected name for module");
-    reader.consume(TokenType.BRACKET_OPEN, `Expected body for module ${name.lexeme}`);
-    const body = exportableStatement();
-    reader.consume(TokenType.BRACKET_CLOSE, `Missing } for module ${name.lexeme}`);
-
-    return { type: StatementType.MODULE_DECLARATION, name, body };
-  }
-
-  function exportableStatement(): Statement {
-
-  }
-
-  function expression(): Statement {
-    return equality();
-  }
-
-  function equality(): Expression {
-    let leftExpression: EqualityExpression |  Expression = comparison();
-
-    while(reader.match(TokenType.EQUALS, TokenType.BANG_EQUALS)) {
-      const equalityOperator = reader.previous();
-      const rightExpression = comparison();
-      leftExpression = { type: StatementType.EQUALITY, left: leftExpression, right: rightExpression, equalityOperator };
-    }
-
-    return leftExpression;
-  }
-
-  function comparison(): Expression {
-    let leftExpression: ComparisonExpression | Expression = addition();
-
-    while(reader.match(TokenType.GREATER_OR_EQUAL, TokenType.GREATER_THAN, TokenType.LESS_OR_EQUAL, TokenType.LESS_THAN)) {
-      const comparisonOperator = reader.previous();
-      const rightExpression = addition();
-      leftExpression = { type: StatementType.COMPARISON, left: leftExpression, right: rightExpression, comparisonOperator };
-    }
-
-    return leftExpression;
-  }
-
-  function addition(): Expression {
-    let expression: BinaryExpression | Expression  = multiplication();
-
-    while(reader.match(TokenType.PLUS, TokenType.HYPHEN)) {
-      const operator = reader.previous();
-      const rightOperand = multiplication();
-
-      expression = { type: StatementType.BINARY, left: expression, right: rightOperand, operator };
-    }
-
-    return expression;
-  }
-
-  function multiplication(): Expression | BinaryExpression {
-    let expression: Expression | BinaryExpression = unary();
-
-    while(reader.match(TokenType.STAR, TokenType.FORWARD_SLASH)) {
-      const operator = reader.previous();
-      const rightOperand = unary();
-
-      expression = {type: StatementType.BINARY, left: expression, right: rightOperand, operator};
-    }
-
-    return expression;
   }
 
   function unary(): Expression {
-    if (reader.match(TokenType.BANG, TokenType.HYPHEN)) {
+    if (reader.match(TokenType.BANG, TokenType.COLON)) {
       const operator = reader.previous();
-      const rightOperand = unary();
+      const right = unary();
 
-      return { type: StatementType.UNARY, operand: rightOperand } as UnaryExpression;
+      return { type: StatementType.UNARY, right, reference: operator, operator: operator.value };
     }
 
     return literal();
   }
 
   function literal(): Expression {
-    if (reader.match(TokenType.INT_NUMBER)) {
-      const int = reader.previous().value;
-      return { type: StatementType.LITERAL, value: { type: ValueType.INT, value: int } } as LiteralExpression;
-    }
+    if (reader.match(TokenType.PAREN_OPEN)) {
+      const groupedExpression = expression();
+      reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
 
-    if (reader.match(TokenType.FLOAT_NUMBER)) {
-      const float = reader.previous().value;
-      return { type: StatementType.LITERAL, value: { type: ValueType.FLOAT, value: float } } as LiteralExpression;
+      return groupedExpression;
     }
 
     if (reader.match(TokenType.IDENTIFIER)) {
-      const identifier = reader.previous();
-      return { type: StatementType.VARIABLE, name: identifier } as VariableExpression;
+      return valaccessor();
     }
 
-    if (reader.consume(TokenType.PAREN_OPEN, "Expected expression")) {
-      const expr = expression();
-      const closingParenthesis = reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
-      return { type: StatementType.GROUPING, expression: expr } as GroupingExpression;
+    if (reader.match(TokenType.INT_NUMBER, TokenType.FLOAT_NUMBER)) {
+      const token = reader.previous();
+      return { type: StatementType.LITERAL, value: token.value, reference: token } as LiteralExpression;
     }
 
-    throw new Error('Expected expression here');
+    throw new Error("No match found for literal");
   }
 
-  function recoverFromError() {
-    while(!reader.isAtEnd()) {
-      const next = reader.peek();
+  function valaccessor(): ValAccessor {
+    const acc = accessor();
 
-      switch(next.type) {
-        case TokenType.MODULE:
-        case TokenType.VAL:
-        case TokenType.RETURN:
-          return;
-      }
+    if (reader.peek().value === TokenType.PAREN_OPEN) {
+      const invoc = invocation();
+      reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
 
+      return { type: StatementType.VALACCESSOR, invocation: invoc, reference: acc.reference, value: acc };
+    }
+
+    return { type: StatementType.VALACCESSOR, reference: acc.reference, value: acc };
+  }
+
+  function invocation(): Invocation {
+    reader.consume(TokenType.PAREN_OPEN, "Expected invocation");
+    const args = [];
+
+    // while(reader.peek().type != TokenType.PAREN_CLOSE) {
+    //   const expr = expression();
+    //
+    // }
+  }
+
+  function accessor(): Accessor {
+    const name = reader.consume(TokenType.IDENTIFIER, "Expected identifier for accessor");
+
+    if (reader.peek().type === TokenType.DOT) {
       reader.advance();
+      const subAccessor = accessor();
+
+      return { type: StatementType.ACCESSOR, reference: name, name: name.value, subAccessor };
     }
+
+    return { type: StatementType.ACCESSOR, reference: name, name: name.value };
   }
 
-  return { ast: programAst, errors };
 }
