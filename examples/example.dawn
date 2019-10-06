@@ -3,7 +3,7 @@ import math
 module example {
 
     export object Rectangle {
-        height: int
+        height: int,
         width: int
     }
 

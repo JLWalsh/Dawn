@@ -1,9 +1,9 @@
 import {TokenReader} from "@dawn/parsing/TokenReader";
-import {Token, TokenType} from "@dawn/parsing/Token";
+import {TokenType} from "@dawn/parsing/Token";
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {Expression} from "@dawn/lang/ast/Expression";
-import {LiteralExpression} from "@dawn/lang/ast/Literal";
+import {Literal} from "@dawn/lang/ast/Literal";
 import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
 import {Invocation} from "@dawn/lang/ast/Invocation";
 import {BinaryExpression, findBinaryExpressionOperator} from "@dawn/lang/ast/expressions/BinaryExpression";
@@ -11,12 +11,121 @@ import {ComparisonExpression, findComparisonOperator} from "@dawn/lang/ast/expre
 import {EqualityExpression, findEqualityOperator} from "@dawn/lang/ast/expressions/EqualityExpression";
 import {Statement} from "@dawn/lang/ast/Statement";
 import {Return} from "@dawn/lang/ast/Return";
-import {FunctionDeclarationArgument} from "@dawn/lang/ast/FunctionDeclarationArgument";
-import {FunctionDeclaration} from "@dawn/lang/ast/FunctionDeclaration";
-import {ValDeclaration} from "@dawn/lang/ast/ValDeclaration";
+import {FunctionDeclarationArgument} from "@dawn/lang/ast/declarations/FunctionDeclarationArgument";
+import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
+import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {Instantiation, KeyValue} from "@dawn/lang/ast/Instantiation";
+import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
+import {Export} from "@dawn/lang/ast/Export";
+import {Declaration} from "@dawn/lang/ast/Declaration";
+import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/ObjectDeclaration";
+import {Import} from "@dawn/lang/ast/Import";
+import {Program, ProgramContent} from "@dawn/lang/ast/Program";
 
-function parse(reader: TokenReader) {
+export function parse(reader: TokenReader): { program: Program, errors: string[] } {
+
+  const errors: string[] = [];
+
+  function program(): Program {
+    const body: ProgramContent[] = [];
+    while (!reader.isAtEnd()) {
+      // try {
+        if (reader.peek().type === TokenType.MODULE) {
+          body.push(moduleDeclaration());
+        } else if (reader.peek().type === TokenType.OBJECT) {
+          body.push(objectDeclaration());
+        } else if (reader.peek().type === TokenType.IMPORT) {
+          body.push(importStatement());
+        } else if (reader.peek().type === TokenType.IDENTIFIER) {
+          body.push(functionDeclaration());
+        } else {
+          throw new Error("Statement not allowed here");
+        }
+      // } catch (error) {
+      //   errors.push(error);
+      //   recover();
+      // }
+    }
+
+    return { body };
+  }
+
+  function declaration(): Declaration {
+    switch(reader.peek().type) {
+      case TokenType.MODULE:
+        return moduleDeclaration();
+      case TokenType.VAL:
+        return valDeclaration();
+      case TokenType.OBJECT:
+        return objectDeclaration();
+      case TokenType.IDENTIFIER:
+        return functionDeclaration();
+    }
+
+    throw new Error("Expected declaration");
+  }
+
+  function objectDeclaration(): ObjectDeclaration {
+    const reference = reader.consume(TokenType.OBJECT, "Expected object declaration");
+    const name = reader.consume(TokenType.IDENTIFIER, "Expected object name");
+    const values: ObjectValue[] = [];
+    reader.consume(TokenType.BRACKET_OPEN, "Expected object body");
+
+    let isFirstValue = true;
+    while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
+      if (!isFirstValue) {
+        reader.consume(TokenType.COMMA, "Expected comma between object values");
+      }
+      isFirstValue = false;
+
+      values.push(objectValue());
+    }
+
+    reader.consume(TokenType.BRACKET_OPEN, "Expected end of object body");
+
+    return { type: AstNodeType.OBJECT_DECLARATION, reference, name: name.value, values };
+  }
+
+  function objectValue(): ObjectValue {
+    const name = reader.consume(TokenType.IDENTIFIER, "Expected value name");
+    reader.consume(TokenType.COLON, "Expected colon after value name");
+    const type = reader.consume(TokenType.IDENTIFIER, "Expected type for value");
+
+    return { name: name.value, valueType: type.value };
+  }
+
+  function moduleDeclaration(): ModuleDeclaration {
+    const reference = reader.consume(TokenType.MODULE, "Expected module declaration");
+    const name = reader.consume(TokenType.IDENTIFIER, "Expected module name");
+    reader.consume(TokenType.BRACKET_OPEN, "Expected body for module");
+
+    const body: (Declaration | Export)[] = [];
+    while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
+      if (reader.peek().type === TokenType.EXPORT) {
+        body.push(exportStatement());
+      } else {
+        body.push(declaration());
+      }
+    }
+
+    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of body for module");
+
+    return { type: AstNodeType.MODULE_DECLARATION, reference, name: name.value, body };
+  }
+
+  function importStatement(): Import {
+    const reference = reader.consume(TokenType.IMPORT, "Expected import statement");
+    const acc = accessor();
+
+    return { type: AstNodeType.IMPORT, reference, importedModule: acc };
+  }
+
+  function exportStatement(): Export {
+    const reference = reader.consume(TokenType.EXPORT, "Expected export statement");
+    const exported = declaration();
+
+    return { type: AstNodeType.EXPORT, exported, reference };
+  }
 
   function functionDeclaration(): FunctionDeclaration {
     const name = reader.consume(TokenType.IDENTIFIER, "Expected function name");
@@ -152,7 +261,7 @@ function parse(reader: TokenReader) {
   function addition(): Expression {
     let left = multiplication();
 
-    while(reader.match(TokenType.PLUS, TokenType.COLON)) {
+    while(reader.match(TokenType.PLUS, TokenType.HYPHEN)) {
       const operatorToken = reader.previous();
       const operator = findBinaryExpressionOperator(operatorToken);
       const right = multiplication();
@@ -188,7 +297,7 @@ function parse(reader: TokenReader) {
   }
 
   function unary(): Expression {
-    if (reader.match(TokenType.BANG, TokenType.COLON)) {
+    if (reader.match(TokenType.BANG, TokenType.HYPHEN)) {
       const operator = reader.previous();
       const right = unary();
 
@@ -212,13 +321,13 @@ function parse(reader: TokenReader) {
 
     if (reader.match(TokenType.INT_NUMBER, TokenType.FLOAT_NUMBER)) {
       const token = reader.previous();
-      return { type: AstNodeType.LITERAL, value: token.value, reference: token } as LiteralExpression;
+      return { type: AstNodeType.LITERAL, value: token.value, reference: token } as Literal;
     }
 
     throw new Error("No match found for literal");
   }
 
-  function undefinedLiteral(): ValAccessor | ObjectInstantiation {
+  function undefinedLiteral(): ValAccessor | Instantiation {
     const acc = accessor();
 
     if (reader.peek().value === TokenType.BRACKET_OPEN) {
@@ -283,7 +392,7 @@ function parse(reader: TokenReader) {
     return values;
   }
 
-  function valaccessor(value: Accessor): ValAccessor | ObjectInstantiation {
+  function valaccessor(value: Accessor): ValAccessor {
     if (reader.peek().value === TokenType.PAREN_OPEN) {
       const invoc = invocation();
       reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
@@ -332,4 +441,19 @@ function parse(reader: TokenReader) {
     return { type: AstNodeType.ACCESSOR, reference: name, name: name.value };
   }
 
+  function recover() {
+    reader.advance();
+
+    while(!reader.isAtEnd()) {
+      switch(reader.peek().type) {
+        case TokenType.MODULE:
+        case TokenType.OBJECT:
+          return;
+      }
+
+      reader.advance();
+    }
+  }
+
+  return { program: program(), errors };
 }

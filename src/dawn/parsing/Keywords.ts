@@ -10,4 +10,5 @@ export const keywords: Keywords = {
   'export': TokenType.EXPORT,
   'object': TokenType.OBJECT,
   'val': TokenType.VAL,
+  'return': TokenType.RETURN,
 };

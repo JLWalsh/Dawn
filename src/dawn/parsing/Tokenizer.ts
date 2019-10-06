@@ -37,11 +37,26 @@ export function tokenize(reader: StringIterableReader): { tokens: Token[], error
       case '^': addSingleToken(TokenType.UPTICK); break;
       case ':': addSingleToken(TokenType.COLON); break;
       case '.': addSingleToken(TokenType.DOT); break;
-      case '=': addSingleToken(TokenType.EQUALS); break;
       case ',': addSingleToken(TokenType.COMMA); break;
+      case '/': addSingleToken(TokenType.FORWARD_SLASH); break;
       case '\n': break;
       case '\r': break;
       case ' ': break;
+      case '!': {
+        if (reader.peek() == '=') {
+          addSingleToken(TokenType.BANG_EQUALS);
+        } else {
+          addSingleToken(TokenType.BANG);
+        }
+        break;
+      }
+      case '=': {
+        if (reader.peek() == '=') {
+          addSingleToken(TokenType.EQUALS_EQUALS);
+        } else {
+          addSingleToken(TokenType.EQUALS);
+        }
+      } break;
       case '-': {
         if (Char.isNumber(reader.peek())) {
           parseNumber();

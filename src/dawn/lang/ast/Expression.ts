@@ -1,6 +1,6 @@
 import {UnaryExpression} from "@dawn/lang/ast/expressions/UnaryExpression";
 import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
-import {LiteralExpression} from "@dawn/lang/ast/Literal";
+import {Literal} from "@dawn/lang/ast/Literal";
 import {BinaryExpression} from "@dawn/lang/ast/expressions/BinaryExpression";
 import {ComparisonExpression} from "@dawn/lang/ast/expressions/ComparisonExpression";
 import {EqualityExpression} from "@dawn/lang/ast/expressions/EqualityExpression";
@@ -10,7 +10,7 @@ export type Expression =
   | EqualityExpression
   | UnaryExpression
   | ValAccessor
-  | LiteralExpression
+  | Literal
   | BinaryExpression
   | ComparisonExpression
   | Instantiation;

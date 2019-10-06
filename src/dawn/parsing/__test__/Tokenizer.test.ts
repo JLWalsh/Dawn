@@ -1,6 +1,7 @@
 import 'module-alias/register';
 import {tokenize} from "@dawn/parsing/Tokenizer";
 import {Token, TokenType} from "@dawn/parsing/Token";
+import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 
 describe('Tokenizer', () => {
 
@@ -275,8 +276,18 @@ describe('Tokenizer', () => {
     });
   });
 
+  it('should parse return keyword', () => {
+    test('return', {
+      tokens: [{
+        type: TokenType.RETURN,
+        lexeme: 'return',
+        value: 'return',
+      }],
+    });
+  });
+
   function test(program: string, expected: { tokens?: Token[], errors?: string[] }) {
-    const { tokens, errors } = tokenize(program);
+    const { tokens, errors } = tokenize(new StringIterableReader(program));
 
     if (expected.tokens) {
       expected.tokens.forEach(token => expect(tokens).toContainEqual(token));
