@@ -1,0 +1,70 @@
+### Dawn Syntax
+
+program         -> *
+
+programdecl    -> moduledecl
+                | objectdecl
+                | funcdecl
+                | import
+
+import          -> "import" accessor
+
+decl            -> objectdecl
+                | moduledecl
+                | funcdecl
+                | valdecl
+
+moduledecl      -> "module" IDENTIFIER "{" (decl | export)* "}"
+
+export          -> decl
+
+objectdecl      -> "object" IDENTIFIER "{" objectvaldecl* "}"
+
+objectvaldecl   -> IDENTIFIER ":" IDENTIFIER
+
+valdecl         -> "val" IDENTIFIER "=" expr
+
+
+funcdecl        -> IDENTIFIER "(" (fundeclcarg ","?)* ")" (":" IDENTIFIER)? funcdeclbody
+
+funcdeclarg     -> IDENTIFIER ":" IDENTIFIER
+
+funcdeclbody    -> "{" statement* "}"
+
+statement       -> return
+                |  valdecl
+                |  expr
+
+return          -> expr
+
+expr            -> equality
+
+equality        -> comparison ( ( "!=" | "==" ) comparison )*
+
+comparison      -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )*
+
+addition        -> multiplication ( ( "-" | "+" ) multiplication )*
+
+multiplication  -> unary ( ( "/" | "*" ) unary )*
+
+unary           -> ( "!" | "-" ) unary
+                | literal
+
+literal         -> NUMBER | STRING | BOOLEAN
+                | "(" expression ")"
+                | undefliteral
+
+undefliteral    -> valaccessor
+                 | inst
+
+accessor        -> IDENTIFIER ("." accessor)?
+
+valaccessor     -> accessor invocation?
+
+inst            -> accessor "{" ((keyinst | orderedinst) ","?)* "}"
+
+keyinst         -> IDENTIFIER ":" expr
+
+orderedinst     -> expr
+
+invocation      -> "(" (expr ","?)* ")"

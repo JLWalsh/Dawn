@@ -1,13 +1,8 @@
-import {AstNode} from "@dawn/lang/ast/AstNode";
-import {Type} from "@dawn/lang/Type";
-import {AstNodeVisitor} from "@dawn/lang/ast/AstNodeVisitor";
+import {Expression} from "@dawn/lang/ast/Expression";
+import {Return} from "@dawn/lang/ast/Return";
+import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 
-export abstract class Statement implements AstNode {
-
-  protected constructor(
-    public readonly type: Type,
-  ) {}
-
-  abstract accept(visitor: AstNodeVisitor): void;
-}
-
+export type Statement =
+  | Expression
+  | Return
+  | ValDeclaration;
