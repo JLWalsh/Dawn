@@ -26,6 +26,15 @@ export class StringIterableReader extends IterableReader<string> {
     return (this.content as string).substring(this.nextExtractStart, this.getPosition());
   }
 
+
+  match(nextOccurence: string): boolean | string {
+    if (this.peek() != nextOccurence) {
+      return false;
+    }
+
+    return this.advance();
+  }
+
   resetExtract() {
     this.nextExtractStart = this.getPosition();
   }

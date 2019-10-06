@@ -23,14 +23,6 @@ export class IterableReader<T> {
     return this.position >= this.content.length;
   }
 
-  match(nextOccurence: T): boolean | T {
-    if (this.peek() != nextOccurence) {
-      return false;
-    }
-
-    return this.advance();
-  }
-
   getPosition() {
     return this.position;
   }

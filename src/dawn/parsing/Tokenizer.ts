@@ -4,8 +4,7 @@ import {SupportedNumbers} from "@dawn/lang/Numbers";
 import {keywords} from "@dawn/parsing/Keywords";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 
-export function tokenize(program: string): { tokens: Token[], errors: string[] } {
-  const reader = new StringIterableReader(program);
+export function tokenize(reader: StringIterableReader): { tokens: Token[], errors: string[] } {
   const tokens: Token[] = [];
   const errors: string[] = [];
   let recoverFromError = false;

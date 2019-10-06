@@ -21,9 +21,12 @@ export enum TokenType {
   HYPHEN,
   EQUALS,
   COMMA,
+  PLUS,
 
   STAR,
+  FORWARD_SLASH,
   UPTICK,
+  BANG,
 }
 
 export interface Token {
