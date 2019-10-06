@@ -1,12 +1,5 @@
+import {Statement} from "@dawn/lang/ast/Statement";
 
-export enum ExpressionType {
-  PROGRAM,
-  BINARY,
-  UNARY,
-  LITERAL,
-  GROUPING,
-}
+export interface Expression extends Statement{
 
-export interface Expression {
-  type: ExpressionType;
 }

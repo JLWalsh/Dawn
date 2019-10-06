@@ -1,6 +1,6 @@
-import {Expression, ExpressionType} from "@dawn/lang/ast/Expression";
+import {Expression, StatementType} from "@dawn/lang/ast/Expression";
 
 export interface GroupingExpression extends Expression {
-  type: ExpressionType.GROUPING
+  type: StatementType.GROUPING
   expression: Expression
 }

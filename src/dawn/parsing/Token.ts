@@ -5,6 +5,7 @@ export enum TokenType {
   EXPORT,
   OBJECT,
   VAL,
+  RETURN,
 
   BRACKET_OPEN,
   BRACKET_CLOSE,
@@ -19,9 +20,18 @@ export enum TokenType {
   DOT,
   COLON,
   HYPHEN,
-  EQUALS,
   COMMA,
   PLUS,
+
+  // Equality
+  EQUALS,
+  BANG_EQUALS,
+
+  // Comparison
+  GREATER_THAN,
+  LESS_THAN,
+  GREATER_OR_EQUAL,
+  LESS_OR_EQUAL,
 
   STAR,
   FORWARD_SLASH,

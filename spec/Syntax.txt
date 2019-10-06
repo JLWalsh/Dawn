@@ -1,0 +1,45 @@
+### Dawn Syntax
+
+program -> (moduledecl | funcdecl)*
+
+import -> "import" accessor
+
+export -> decl
+
+decl -> objectdecl
+      | moduledecl
+      | funcdecl
+      | vardecl
+
+moduledecl -> "module" IDENTIFIER "{" (decl | export)* "}"
+
+objectdecl -> "object" IDENTIFIER "{" objectvaldecl* "}"
+
+objectvaldecl -> IDENTIFIER ":" IDENTIFIER
+
+vardecl -> "val" IDENTIFIER "=" expr
+
+funcdecl -> IDENTIFIER "(" funcarg* ")" (":" IDENTIFIER)? funcbody
+
+funcarg -> IDENTIFIER ":" IDENTIFIER
+
+funcbody -> "{" expr* "}"
+
+expr     -> equality
+
+equality       -> comparison ( ( "!=" | "==" ) comparison )*
+
+comparison     -> addition ( ( ">" | ">=" | "<" | "<=" ) addition )*
+
+addition       -> multiplication ( ( "-" | "+" ) multiplication )*
+
+multiplication -> unary ( ( "/" | "*" ) unary )*
+
+unary          -> ( "!" | "-" ) unary
+               | primary
+
+primary        -> NUMBER | STRING | BOOLEAN
+               | "(" expression ")"
+               | accessor
+
+accessor -> IDENTIFIER ("." accessor)?

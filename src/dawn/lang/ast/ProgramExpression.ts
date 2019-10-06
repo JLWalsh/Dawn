@@ -1,6 +1,6 @@
-import {Expression, ExpressionType} from "@dawn/lang/ast/Expression";
+import {Expression, StatementType} from "@dawn/lang/ast/Expression";
 
 export interface ProgramExpression extends Expression {
-  type: ExpressionType.PROGRAM,
+  type: StatementType.PROGRAM,
   instructions: Expression[];
 }
