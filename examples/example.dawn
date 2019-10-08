@@ -24,7 +24,6 @@ module example {
 main() {
    val rectangle = example.Rectangle { 10i, 20i }
    val circle = example.Circle { radius: 20i }
-   val bob = example.Rectangle { radius: 20i }.radius == math.PI.bob()
    val mike = example.Circle { radius: 30i } + 20i;
 
    print(example.calculateArea(rectangle))

@@ -5,7 +5,7 @@ import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import {parse} from "@dawn/parsing/Parser";
 import {TokenReader} from "@dawn/parsing/TokenReader";
 
-const program = fs.readFileSync("example.dawn", "utf-8");
+const program = fs.readFileSync("./build/example.dawn", "utf-8");
 
 const { tokens, errors } = tokenize(new StringIterableReader(program));
 

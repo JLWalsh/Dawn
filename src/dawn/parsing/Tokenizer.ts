@@ -34,16 +34,17 @@ export function tokenize(reader: StringIterableReader): { tokens: Token[], error
       case '(': addSingleToken(TokenType.PAREN_OPEN); break;
       case ')': addSingleToken(TokenType.PAREN_CLOSE); break;
       case '*': addSingleToken(TokenType.STAR); break;
-      case '^': addSingleToken(TokenType.UPTICK); break;
       case ':': addSingleToken(TokenType.COLON); break;
       case '.': addSingleToken(TokenType.DOT); break;
       case ',': addSingleToken(TokenType.COMMA); break;
       case '/': addSingleToken(TokenType.FORWARD_SLASH); break;
+      case '+': addSingleToken(TokenType.PLUS); break;
       case '\n': break;
       case '\r': break;
       case ' ': break;
       case '!': {
         if (reader.peek() == '=') {
+          reader.advance();
           addSingleToken(TokenType.BANG_EQUALS);
         } else {
           addSingleToken(TokenType.BANG);
@@ -52,9 +53,26 @@ export function tokenize(reader: StringIterableReader): { tokens: Token[], error
       }
       case '=': {
         if (reader.peek() == '=') {
+          reader.advance();
           addSingleToken(TokenType.EQUALS_EQUALS);
         } else {
           addSingleToken(TokenType.EQUALS);
+        }
+      } break;
+      case '>': {
+        if (reader.peek() === '=') {
+          reader.advance();
+          addSingleToken(TokenType.GREATER_OR_EQUAL);
+        } else {
+          addSingleToken(TokenType.GREATER_THAN);
+        }
+      } break;
+      case '<': {
+        if (reader.peek() === '=') {
+          reader.advance();
+          addSingleToken(TokenType.LESS_OR_EQUAL);
+        } else {
+          addSingleToken(TokenType.LESS_THAN);
         }
       } break;
       case '-': {

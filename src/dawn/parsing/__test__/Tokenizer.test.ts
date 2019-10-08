@@ -7,7 +7,7 @@ describe('Tokenizer', () => {
 
   describe('given multiple tokens', () => {
     it('should parse multiple tokens', () => {
-      test('import helloworld \n 20i-40.123f object', {
+      test('import helloworld \n 20i-40.123f object != - *', {
        tokens: [
          {
            type: TokenType.IMPORT,
@@ -33,6 +33,18 @@ describe('Tokenizer', () => {
            type: TokenType.OBJECT,
            value: 'object',
            lexeme: 'object',
+         },
+         {
+           type: TokenType.BANG_EQUALS,
+           lexeme: '!=',
+         },
+         {
+           type: TokenType.HYPHEN,
+           lexeme: '-',
+         },
+         {
+           type: TokenType.STAR,
+           lexeme: '*',
          },
        ]
       });
@@ -61,8 +73,9 @@ describe('Tokenizer', () => {
 
   it('should return error when parsing an integer with decimals', () => {
     test('20.20123i', {
+      // TODO add error object instead of printing error location in message
       errors: [
-        'Int may not contain decimals',
+        '(1, 9) Int may not contain decimals',
       ],
     });
   });
@@ -199,15 +212,6 @@ describe('Tokenizer', () => {
     });
   });
 
-  it('should parse ^', () => {
-    test('^', {
-      tokens: [{
-        type: TokenType.UPTICK,
-        lexeme: '^',
-      }],
-    });
-  });
-
   it('should parse =', () => {
     test('=', {
       tokens: [{
@@ -282,6 +286,60 @@ describe('Tokenizer', () => {
         type: TokenType.RETURN,
         lexeme: 'return',
         value: 'return',
+      }],
+    });
+  });
+
+  it('should parse >=', () => {
+    test('>=', {
+      tokens: [{
+        type: TokenType.GREATER_OR_EQUAL,
+        lexeme: '>=',
+      }],
+    });
+  });
+
+  it('should parse >', () => {
+    test('>', {
+      tokens: [{
+        type: TokenType.GREATER_THAN,
+        lexeme: '>',
+      }],
+    });
+  });
+
+  it('should parse <=', () => {
+    test('<=', {
+      tokens: [{
+        type: TokenType.LESS_OR_EQUAL,
+        lexeme: '<=',
+      }],
+    });
+  });
+
+  it('should parse <', () => {
+    test('<', {
+      tokens: [{
+        type: TokenType.LESS_THAN,
+        lexeme: '<',
+      }],
+    });
+  });
+
+  it('should parse ==', () => {
+    test('==', {
+      tokens: [{
+        type: TokenType.EQUALS_EQUALS,
+        lexeme: '==',
+      }],
+    });
+  });
+
+  it('should parse !=', () => {
+    test('!=', {
+      tokens: [{
+        type: TokenType.BANG_EQUALS,
+        lexeme: '!=',
       }],
     });
   });

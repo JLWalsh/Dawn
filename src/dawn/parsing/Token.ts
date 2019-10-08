@@ -35,9 +35,7 @@ export enum TokenType {
 
   STAR,
   FORWARD_SLASH,
-  UPTICK,
   BANG,
-
   EQUALS,
 }
 

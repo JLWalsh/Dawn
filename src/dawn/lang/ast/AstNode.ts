@@ -1,7 +1,4 @@
-import {Token} from "@dawn/parsing/Token";
-
 export enum AstNodeType {
-  PROGRAM,
   IMPORT,
   EXPORT,
   RETURN,
@@ -27,5 +24,4 @@ export enum AstNodeType {
 
 export interface AstNode {
   type: AstNodeType;
-  reference: Token;
 }

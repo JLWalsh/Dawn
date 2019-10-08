@@ -2,7 +2,7 @@ import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
 import {Expression} from "@dawn/lang/ast/Expression";
 import {Token, TokenType} from "@dawn/parsing/Token";
 
-export enum BinaryExpressionOperator {
+export enum BinaryOperator {
   ADD,
   SUBTRACT,
   MULTIPLY,
@@ -12,13 +12,13 @@ export enum BinaryExpressionOperator {
 export function findBinaryExpressionOperator(token: Token) {
   switch(token.type) {
     case TokenType.STAR:
-      return BinaryExpressionOperator.MULTIPLY;
+      return BinaryOperator.MULTIPLY;
     case TokenType.FORWARD_SLASH:
-      return BinaryExpressionOperator.DIVIDE;
+      return BinaryOperator.DIVIDE;
     case TokenType.PLUS:
-      return BinaryExpressionOperator.ADD;
+      return BinaryOperator.ADD;
     case TokenType.COLON:
-      return BinaryExpressionOperator.SUBTRACT;
+      return BinaryOperator.SUBTRACT;
   }
 
   throw new Error(`Operator ${token.lexeme} is not available for binary expressions`);
@@ -27,9 +27,6 @@ export function findBinaryExpressionOperator(token: Token) {
 export interface BinaryExpression extends AstNode {
   type: AstNodeType.BINARY;
   left: Expression;
-  operator: {
-    type: BinaryExpressionOperator;
-    reference: Token;
-  };
+  operator: BinaryOperator;
   right: Expression;
 }
