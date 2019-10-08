@@ -54,3 +54,11 @@ main() {
   io.print("The rectangle's area is: " . 2d.calculateArea(rectangle))
 }
 ```
+
+### Language Philosophy
+These are the principles which Dawn was built on:
+
+- Prefer providing modules over adding native functions. For example, instead of globally defining a `pow` (power) function, make it
+available through the `math` module. For example, 
+- Dawn should not be specific to any runtime environment. For example, Dawn could be compiled to a native executable, but it could also be compiled to a high level language such as Javascript. This means that certain native libraries might only be available on certain runtime environments
+- Syntax should contain as little noise as possible
