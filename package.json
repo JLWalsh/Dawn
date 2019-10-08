@@ -14,10 +14,13 @@
     "@types/node": "^12.7.9",
     "jest": "^24.9.0",
     "ts-jest": "^24.1.0",
+    "ts-node": "^8.4.1",
     "typescript": "^3.6.3"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "run": "node build/main.js",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",

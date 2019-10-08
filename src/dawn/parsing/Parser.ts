@@ -29,7 +29,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   function program(): Program {
     const body: ProgramContent[] = [];
     while (!reader.isAtEnd()) {
-      // try {
+      try {
         if (reader.peek().type === TokenType.MODULE) {
           body.push(moduleDeclaration());
         } else if (reader.peek().type === TokenType.OBJECT) {
@@ -41,10 +41,14 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
         } else {
           throw new Error("Statement not allowed here");
         }
-      // } catch (error) {
-      //   errors.push(error);
-      //   recover();
-      // }
+      } catch (error) {
+        if (error instanceof Error) {
+          errors.push(error.message);
+        } else {
+          errors.push(error);
+        }
+        recover();
+      }
     }
 
     return { body };
@@ -81,7 +85,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
       values.push(objectValue());
     }
 
-    reader.consume(TokenType.BRACKET_OPEN, "Expected end of object body");
+    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of object body");
 
     return { type: AstNodeType.OBJECT_DECLARATION, reference, name: name.value, values };
   }
@@ -132,16 +136,21 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
     const args: FunctionDeclarationArgument[] = [];
 
     reader.consume(TokenType.PAREN_OPEN, "Expected function prototype");
+    let isFirstArgument = true;
     while(reader.peek().type !== TokenType.PAREN_CLOSE) {
+      if (!isFirstArgument) {
+        reader.consume(TokenType.COMMA, "Expected comma after argument");
+      }
+      isFirstArgument = false;
       args.push(functionArgument());
-      reader.consume(TokenType.COMMA, "Expected comma after argument");
     }
 
     reader.consume(TokenType.PAREN_CLOSE, "Expected end of function arguments");
 
     let returnType = null;
-    if (reader.peek().type === TokenType.IDENTIFIER) {
-      returnType = reader.advance().value;
+    if (reader.match(TokenType.COLON)) {
+      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "Expected return type");
+      returnType = returnTypeToken.value;
     }
 
     const body = functionBody();
@@ -315,7 +324,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
       return groupedExpression;
     }
 
-    if (reader.match(TokenType.IDENTIFIER)) {
+    if (reader.peek().type === TokenType.IDENTIFIER) {
       return undefinedLiteral();
     }
 
@@ -330,7 +339,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   function undefinedLiteral(): ValAccessor | Instantiation {
     const acc = accessor();
 
-    if (reader.peek().value === TokenType.BRACKET_OPEN) {
+    if (reader.peek().type === TokenType.BRACKET_OPEN) {
       return instantiation(acc);
     }
 
@@ -342,7 +351,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
 
     let values: Expression[] | KeyValue[] = [];
     if (reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if(reader.peekAt(2).type === TokenType.COLON) {
+      if(reader.peekAt(1).type === TokenType.COLON) {
         values = keyValueInstantiation();
       } else {
         values = orderedInstantiation();
@@ -377,7 +386,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   function orderedInstantiation(): Expression[] {
     const values: Expression[] = [];
 
-    let isFirstValue = false;
+    let isFirstValue = true;
     while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
       if(!isFirstValue) {
         reader.consume(TokenType.COMMA, "Expected comma for next value in instantiation");
@@ -393,9 +402,8 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   }
 
   function valaccessor(value: Accessor): ValAccessor {
-    if (reader.peek().value === TokenType.PAREN_OPEN) {
+    if (reader.peek().type === TokenType.PAREN_OPEN) {
       const invoc = invocation();
-      reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
 
       return {
         type: AstNodeType.VALACCESSOR,
@@ -412,7 +420,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
     const leftParen = reader.consume(TokenType.PAREN_OPEN, "Expected invocation");
     const args: Expression[] = [];
 
-    let isFirstArgument = false;
+    let isFirstArgument = true;
     while(reader.peek().type != TokenType.PAREN_CLOSE) {
       if (!isFirstArgument) {
         reader.consume(TokenType.COMMA, "Expected comma after argument");
@@ -431,8 +439,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   function accessor(): Accessor {
     const name = reader.consume(TokenType.IDENTIFIER, "Expected identifier for accessor");
 
-    if (reader.peek().type === TokenType.DOT) {
-      reader.advance();
+    if (reader.match(TokenType.DOT)) {
       const subAccessor = accessor();
 
       return { type: AstNodeType.ACCESSOR, reference: name, name: name.value, subAccessor };

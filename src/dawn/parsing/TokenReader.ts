@@ -16,7 +16,7 @@ export class TokenReader extends IterableReader<Token> {
   consume(tokenType: TokenType, errorIfNotPresent: string): Token {
     const token = this.match(tokenType);
     if(!token) {
-      throw new Error(errorIfNotPresent);
+      throw new Error(`(${this.getPosition()}) ${errorIfNotPresent}`);
     }
 
     return this.previous();
@@ -28,7 +28,7 @@ export class TokenReader extends IterableReader<Token> {
 
   match(...anyOf: TokenType[]): boolean {
     const matchingToken = anyOf.find(t => this.peek().type === t);
-    if (!matchingToken) {
+    if (matchingToken === undefined) {
       return false;
     }
 
