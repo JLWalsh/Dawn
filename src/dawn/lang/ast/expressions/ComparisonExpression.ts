@@ -27,9 +27,6 @@ export function findComparisonOperator(operatorToken: Token): ComparisonOperator
 export interface ComparisonExpression extends AstNode {
   type: AstNodeType.COMPARISON;
   left: Expression;
-  operator: {
-    type: ComparisonOperator;
-    reference: Token;
-  }
+  operator: ComparisonOperator;
   right: Expression;
 }

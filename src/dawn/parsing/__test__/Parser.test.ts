@@ -8,6 +8,8 @@ import {parse} from "@dawn/parsing/Parser";
 import {Return} from "@dawn/lang/ast/Return";
 import {Literal} from "@dawn/lang/ast/Literal";
 import {NativeType} from "@dawn/lang/NativeType";
+import ast from "@dawn/lang/ast/builder/Ast";
+import {Token} from "@dawn/parsing/Token";
 
 describe('Parser', () => {
   it('should parse function declaration', () => {
@@ -17,23 +19,14 @@ testFunction() {
 }
     `;
 
-    const expected: FunctionDeclaration = {
-      reference: jest.fn() as any,
-      type: AstNodeType.FUNCTION_DECLARATION,
-      name: 'testFunction',
-      args: [],
-      returnType: undefined,
-      body: [
-        {
-          type: AstNodeType.RETURN,
-          value: {
-            type: AstNodeType.LITERAL,
-            value: 10,
-            valueType: NativeType.INT,
-          } as Literal,
-        } as Return,
-      ],
-    };
+    const expected = ast.functionDeclaration('testFunction', [], undefined, [
+      ast.return(
+        ast.literal(
+          10,
+          NativeType.INT,
+        ),
+      ),
+    ]);
 
     assert(program, expected);
   });

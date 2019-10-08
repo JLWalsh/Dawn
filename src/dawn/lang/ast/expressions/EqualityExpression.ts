@@ -21,9 +21,6 @@ export function findEqualityOperator(operatorToken: Token) {
 export interface EqualityExpression extends AstNode {
   type: AstNodeType.EQUALITY;
   left: Expression;
-  operator: {
-    type: EqualityOperator;
-    reference: Token;
-  };
+  operator: EqualityOperator;
   right: Expression;
 }
