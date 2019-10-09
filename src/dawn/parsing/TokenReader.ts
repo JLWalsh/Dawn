@@ -1,5 +1,7 @@
 import {IterableReader} from "@dawn/parsing/IterableReader";
 import {Token, TokenType} from "@dawn/parsing/Token";
+import {ParseError} from "@dawn/parsing/ParseError";
+import {DiagnosticTemplateValues} from "@dawn/ui/DiagnosticReporter";
 
 export class TokenReader extends IterableReader<Token> {
 
@@ -13,10 +15,10 @@ export class TokenReader extends IterableReader<Token> {
     return this.content[this.getPosition() + offset];
   }
 
-  consume(tokenType: TokenType, errorIfNotPresent: string): Token {
+  consume(tokenType: TokenType, diagnosticCode: string, diagnosticTemplateValues?: DiagnosticTemplateValues): Token {
     const token = this.match(tokenType);
     if(!token) {
-      throw new Error(`(${this.getPosition()}) ${errorIfNotPresent}`);
+      throw new ParseError(diagnosticCode, diagnosticTemplateValues || {});
     }
 
     return this.previous();

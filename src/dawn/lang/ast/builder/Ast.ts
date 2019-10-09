@@ -56,12 +56,12 @@ class AstNodeBuilder {
     return { type: AstNodeType.VALACCESSOR, value, invocation };
   }
 
-  functionDeclaration(name: string, args: FunctionDeclarationArgument[], returnType: string | void, body: Statement[]): FunctionDeclaration {
+  functionDeclaration(name: string, args: FunctionDeclarationArgument[], returnType: string | null, body: Statement[]): FunctionDeclaration {
     return { type: AstNodeType.FUNCTION_DECLARATION, name, args, returnType, body };
   }
 
   functionDeclarationArgument(valueName: string, valueType: string): FunctionDeclarationArgument {
-    return { type: AstNodeType.FUNCTION_DECLARATION_ARGUMENT, valueName, valueType };
+    return { valueName, valueType };
   }
 
   moduleDeclaration(name: string, body: (Export | Declaration)[]): ModuleDeclaration {

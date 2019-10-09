@@ -21,37 +21,37 @@ import {Import} from "@dawn/lang/ast/Import";
 import {Program, ProgramContent} from "@dawn/lang/ast/Program";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {tokenTypeToNativeType} from "@dawn/lang/NativeType";
+import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
+import {ParseError} from "@dawn/parsing/ParseError";
 
-export function parse(reader: TokenReader): { program: Program, errors: string[] } {
-
-  const errors: string[] = [];
+export function parse(reader: TokenReader, reporter: DiagnosticReporter): Program {
 
   function program(): Program {
     const body: ProgramContent[] = [];
     while (!reader.isAtEnd()) {
       try {
-        if (reader.peek().type === TokenType.MODULE) {
-          body.push(moduleDeclaration());
-        } else if (reader.peek().type === TokenType.OBJECT) {
-          body.push(objectDeclaration());
-        } else if (reader.peek().type === TokenType.IMPORT) {
-          body.push(importStatement());
-        } else if (reader.peek().type === TokenType.IDENTIFIER) {
-          body.push(functionDeclaration());
-        } else {
-          throw new Error("Statement not allowed here");
-        }
+        body.push(programContent());
       } catch (error) {
-        if (error instanceof Error) {
-          errors.push(error.message);
-        } else {
-          errors.push(error);
-        }
+        reportError(error);
         recover();
       }
     }
 
     return { body };
+  }
+
+  function programContent(): ProgramContent {
+    if (reader.peek().type === TokenType.MODULE) {
+      return moduleDeclaration();
+    } else if (reader.peek().type === TokenType.OBJECT) {
+      return objectDeclaration();
+    } else if (reader.peek().type === TokenType.IMPORT) {
+      return importStatement();
+    } else if (reader.peek().type === TokenType.IDENTIFIER) {
+      return functionDeclaration();
+    }
+
+    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT");
   }
 
   function declaration(): Declaration {
@@ -66,26 +66,26 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
         return functionDeclaration();
     }
 
-    throw new Error("Expected declaration");
+    throw new ParseError("EXPECTED_DECLARATION");
   }
 
   function objectDeclaration(): ObjectDeclaration {
-    reader.consume(TokenType.OBJECT, "Expected object declaration");
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected object name");
+    reader.consume(TokenType.OBJECT, "EXPECTED_OBJECT_DECLARATION");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_OBJECT_NAME");
     const values: ObjectValue[] = [];
-    reader.consume(TokenType.BRACKET_OPEN, "Expected object body");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_OBJECT_BODY");
 
     let isFirstValue = true;
     while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
       if (!isFirstValue) {
-        reader.consume(TokenType.COMMA, "Expected comma between object values");
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BETWEEN_VALUES");
       }
       isFirstValue = false;
 
       values.push(objectValue());
     }
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of object body");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_OBJECT_DECLARATION");
 
     return ast.objectDeclaration(name.value, values);
   }
@@ -422,5 +422,19 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
     }
   }
 
-  return { program: program(), errors };
+  function reportError(error: any) {
+    if (typeof error === 'string') {
+      reporter.reportRaw(error);
+      return;
+    }
+
+    if (error instanceof ParseError) {
+      reporter.report(error.diagnosticCode, error.diagnosticTemplateValues);
+      return;
+    }
+
+    reporter.reportRaw(JSON.stringify(error));
+  }
+
+  return program();
 }

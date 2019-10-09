@@ -2,41 +2,80 @@ import {TokenReader} from "@dawn/parsing/TokenReader";
 import {tokenize} from "@dawn/parsing/Tokenizer";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import {Program, ProgramContent} from "@dawn/lang/ast/Program";
-import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
-import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {parse} from "@dawn/parsing/Parser";
-import {Return} from "@dawn/lang/ast/Return";
-import {Literal} from "@dawn/lang/ast/Literal";
 import {NativeType} from "@dawn/lang/NativeType";
 import ast from "@dawn/lang/ast/builder/Ast";
-import {Token} from "@dawn/parsing/Token";
 
 describe('Parser', () => {
-  it('should parse function declaration', () => {
-    const program = parseProgram`
+  describe('function declaration', () => {
+    it('should parse function declaration', () => {
+      const program = parseProgram`
 testFunction() {
+  val x = 10i
+  return x
+}
+    `;
+
+      const expected =
+        ast.functionDeclaration('testFunction', [], null, [
+          ast.valDeclaration('x', ast.literal(10, NativeType.INT)),
+          ast.return(
+            ast.valAccessor(ast.accessor('x')),
+          ),
+        ]);
+
+      expectProgramEquals(program, expected);
+    });
+
+    it('should parse function with one argument', () => {
+      const program = parseProgram`
+testFunction(one: int): float {
   return 10i
 }
     `;
 
-    const expected = ast.functionDeclaration('testFunction', [], undefined, [
-      ast.return(
-        ast.literal(
-          10,
-          NativeType.INT,
-        ),
-      ),
-    ]);
+      const expected =
+        ast.functionDeclaration('testFunction', [{ valueName: 'one', valueType: 'int' }], 'float', [
+          ast.return(
+            ast.literal(
+              10,
+              NativeType.INT,
+            ),
+          ),
+        ]);
 
-    assert(program, expected);
+      expectProgramEquals(program, expected);
+    });
+
+    it('should parse function with multiple arguments', () => {
+      const program = parseProgram`
+testFunction(one: int, two: float, three: int) {
+  return 10i
+}
+    `;
+
+      const expected =
+        ast.functionDeclaration('testFunction',
+          [{ valueName: 'one', valueType: 'int' }, { valueName: 'two', valueType: 'float'}, { valueName: 'three', valueType: 'int' }], null, [
+          ast.return(
+            ast.literal(
+              10,
+              NativeType.INT,
+            ),
+          ),
+        ]);
+
+      expectProgramEquals(program, expected);
+    });
   });
 
-  function assert(output: { program: Program }, nodes: ProgramContent[] | ProgramContent) {
+  function expectProgramEquals(output: { program: Program, errors: string[] }, nodes: ProgramContent[] | ProgramContent) {
     const body = Array.isArray(nodes) ? nodes : [nodes];
 
     const expectedNodes: Program = { body };
 
     expect(output.program).toEqual(expectedNodes);
+    expect(output.errors).toEqual([]);
   }
 });
 
