@@ -6,6 +6,6 @@ export interface FunctionDeclaration extends AstNode {
   type: AstNodeType.FUNCTION_DECLARATION;
   name: string;
   args: FunctionDeclarationArgument[];
-  returnType: string | void;
+  returnType: string | null;
   body: Statement[];
 }

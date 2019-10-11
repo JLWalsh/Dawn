@@ -1,0 +1,31 @@
+import io
+
+module Shapes {
+
+  val PI = 3.1416f
+
+  export object Rectangle {
+    width: int,
+    height: int
+  }
+
+  export object Circle {
+    radius: int
+  }
+
+  export calculateArea(rectangle: Rectangle): float {
+    return rectangle.width * rectangle.height
+  }
+
+  export calculateArea(circle: Circle): float {
+    return naivePow(circle.radius, 2i) * PI
+  }
+}
+
+main() {
+  val rectangle = Shapes.Rectangle { 10i, 20i }
+  val circle = Shapes.Circle { radius: 30i }
+
+  io.print(Shapes.calculateArea(circle))
+  io.print(Shapes.calculateArea(rectangle))
+}

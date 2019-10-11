@@ -21,37 +21,37 @@ import {Import} from "@dawn/lang/ast/Import";
 import {Program, ProgramContent} from "@dawn/lang/ast/Program";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {tokenTypeToNativeType} from "@dawn/lang/NativeType";
+import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
+import {ParseError} from "@dawn/parsing/ParseError";
 
-export function parse(reader: TokenReader): { program: Program, errors: string[] } {
-
-  const errors: string[] = [];
+export function parse(reader: TokenReader, reporter: DiagnosticReporter): Program {
 
   function program(): Program {
     const body: ProgramContent[] = [];
     while (!reader.isAtEnd()) {
       try {
-        if (reader.peek().type === TokenType.MODULE) {
-          body.push(moduleDeclaration());
-        } else if (reader.peek().type === TokenType.OBJECT) {
-          body.push(objectDeclaration());
-        } else if (reader.peek().type === TokenType.IMPORT) {
-          body.push(importStatement());
-        } else if (reader.peek().type === TokenType.IDENTIFIER) {
-          body.push(functionDeclaration());
-        } else {
-          throw new Error("Statement not allowed here");
-        }
+        body.push(programContent());
       } catch (error) {
-        if (error instanceof Error) {
-          errors.push(error.message);
-        } else {
-          errors.push(error);
-        }
+        reportError(error);
         recover();
       }
     }
 
     return { body };
+  }
+
+  function programContent(): ProgramContent {
+    if (reader.peek().type === TokenType.MODULE) {
+      return moduleDeclaration();
+    } else if (reader.peek().type === TokenType.OBJECT) {
+      return objectDeclaration();
+    } else if (reader.peek().type === TokenType.IMPORT) {
+      return importStatement();
+    } else if (reader.peek().type === TokenType.IDENTIFIER) {
+      return functionDeclaration();
+    }
+
+    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT");
   }
 
   function declaration(): Declaration {
@@ -66,90 +66,72 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
         return functionDeclaration();
     }
 
-    throw new Error("Expected declaration");
+    throw new ParseError("EXPECTED_DECLARATION");
   }
 
   function objectDeclaration(): ObjectDeclaration {
-    reader.consume(TokenType.OBJECT, "Expected object declaration");
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected object name");
-    const values: ObjectValue[] = [];
-    reader.consume(TokenType.BRACKET_OPEN, "Expected object body");
+    reader.consume(TokenType.OBJECT, "EXPECTED_OBJECT_DECLARATION");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_OBJECT_NAME");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_OBJECT_BODY");
 
-    let isFirstValue = true;
-    while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if (!isFirstValue) {
-        reader.consume(TokenType.COMMA, "Expected comma between object values");
-      }
-      isFirstValue = false;
+    const values = mapWithCommasUntil<ObjectValue>(TokenType.BRACKET_CLOSE, () => objectValue());
 
-      values.push(objectValue());
-    }
-
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of object body");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_OBJECT_DECLARATION");
 
     return ast.objectDeclaration(name.value, values);
   }
 
   function objectValue(): ObjectValue {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected value name");
-    reader.consume(TokenType.COLON, "Expected colon after value name");
-    const type = reader.consume(TokenType.IDENTIFIER, "Expected type for value");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_VALUE_NAME");
+    reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_VALUE_NAME");
+    const type = reader.consume(TokenType.IDENTIFIER, "EXPECTED_TYPE_FOR_VALUE");
 
-    return { name: name.value, valueType: type.value };
+    return { name: name.value, type: type.value };
   }
 
   function moduleDeclaration(): ModuleDeclaration {
-    reader.consume(TokenType.MODULE, "Expected module declaration");
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected module name");
-    reader.consume(TokenType.BRACKET_OPEN, "Expected body for module");
+    reader.consume(TokenType.MODULE, "EXPECTED_MODULE_DECLARATION");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_MODULE_NAME");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_MODULE_BODY");
 
-    const body: (Declaration | Export)[] = [];
-    while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
+    const body = mapUntil<Declaration | Export>(TokenType.BRACKET_CLOSE, () => {
       if (reader.peek().type === TokenType.EXPORT) {
-        body.push(exportStatement());
+        return exportStatement();
       } else {
-        body.push(declaration());
+        return declaration();
       }
-    }
+    });
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of body for module");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_MODULE_BODY");
 
     return ast.moduleDeclaration(name.value, body);
   }
 
   function importStatement(): Import {
-    reader.consume(TokenType.IMPORT, "Expected import statement");
+    reader.consume(TokenType.IMPORT, "EXPECTED_IMPORT_STATEMENT");
     const acc = accessor();
 
     return ast.import(acc);
   }
 
   function exportStatement(): Export {
-    reader.consume(TokenType.EXPORT, "Expected export statement");
+    reader.consume(TokenType.EXPORT, "EXPECTED_EXPORT_STATEMENT");
     const exported = declaration();
 
     return ast.export(exported);
   }
 
   function functionDeclaration(): FunctionDeclaration {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected function name");
-    const args: FunctionDeclarationArgument[] = [];
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_DECLARATION");
+    reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
 
-    reader.consume(TokenType.PAREN_OPEN, "Expected function prototype");
-    let isFirstArgument = true;
-    while(reader.peek().type !== TokenType.PAREN_CLOSE) {
-      if (!isFirstArgument) {
-        reader.consume(TokenType.COMMA, "Expected comma after argument");
-      }
-      isFirstArgument = false;
-      args.push(functionArgument());
-    }
+    const args = mapWithCommasUntil<FunctionDeclarationArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
 
-    reader.consume(TokenType.PAREN_CLOSE, "Expected end of function arguments");
+    reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
 
     let returnType = null;
     if (reader.match(TokenType.COLON)) {
-      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "Expected return type");
+      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_RETURN_TYPE");
       returnType = returnTypeToken.value;
     }
 
@@ -159,15 +141,15 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   }
 
   function functionArgument(): FunctionDeclarationArgument {
-    const variableName = reader.consume(TokenType.IDENTIFIER, "Expected argument name");
-    reader.consume(TokenType.COLON, "Expected colon after argument name");
-    const variableType = reader.consume(TokenType.IDENTIFIER, "Expected argument type");
+    const variableName = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_NAME");
+    reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_ARGUMENT_NAME");
+    const variableType = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_TYPE");
 
     return ast.functionDeclarationArgument(variableName.value, variableType.value);
   }
 
   function functionBody(): Statement[]  {
-    reader.consume(TokenType.BRACKET_OPEN, "Expected function body");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_FUNCTION_BODY");
     const body = [];
 
     while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
@@ -175,7 +157,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
       body.push(stmt);
     }
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of function body");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_FUNCTION_BODY");
 
     return body;
   }
@@ -193,16 +175,16 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   }
 
   function returnStatement(): Return {
-    reader.consume(TokenType.RETURN, "Expected return statement");
+    reader.consume(TokenType.RETURN, "EXPECTED_RETURN_STATEMENT");
     const value = expression();
 
     return ast.return(value);
   }
 
   function valDeclaration(): ValDeclaration {
-    reader.consume(TokenType.VAL, "Expected value declaration");
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected value name");
-    reader.consume(TokenType.EQUALS, "Expected assignment to value");
+    reader.consume(TokenType.VAL, "EXPECTED_VALUE_DECLARATION");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_VALUE_NAME");
+    reader.consume(TokenType.EQUALS, "EXPECTED_ASSIGNMENT_TO_VALUE");
     const initializer = expression();
 
     return ast.valDeclaration(name.value, initializer);
@@ -282,7 +264,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   function literal(): Expression {
     if (reader.match(TokenType.PAREN_OPEN)) {
       const groupedExpression = expression();
-      reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
+      reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_CLOSING_PARENTHESIS");
 
       return groupedExpression;
     }
@@ -298,7 +280,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
       return ast.literal(token.value, valueType);
     }
 
-    throw new Error("No match found for literal");
+    throw new Error("NO_MATCH_FOUND_FOR_LITERAL");
   }
 
   function undefinedLiteral(): ValAccessor | Instantiation {
@@ -312,7 +294,7 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   }
 
   function instantiation(objectType: Accessor): Instantiation {
-    reader.consume(TokenType.BRACKET_OPEN, "Expected object instantiation");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_OBJECT_INSTANTIATION");
 
     let values: Expression[] | KeyValue[] = [];
     if (reader.peek().type !== TokenType.BRACKET_CLOSE) {
@@ -323,47 +305,23 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
       }
     }
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of object instantiation");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_OBJECT_INSTANTIATION");
 
     return ast.instantiation(objectType, values);
   }
 
   function keyValueInstantiation(): KeyValue[] {
-    const values: KeyValue[] = [];
-
-    let isFirstValue = true;
-    while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if (!isFirstValue) {
-        reader.consume(TokenType.COMMA, "Expected comma for next value in instantiation");
-      }
-      isFirstValue = false;
-
-      const key = reader.consume(TokenType.IDENTIFIER, "Expected key for key value instantiation");
-      reader.consume(TokenType.COLON, "Expected assignment for key value instantiation");
+    return mapWithCommasUntil<KeyValue>(TokenType.BRACKET_CLOSE, () => {
+      const key = reader.consume(TokenType.IDENTIFIER, "EXPECTED_KEY_FOR_KEY_VALUE_INSTANTIATION");
+      reader.consume(TokenType.COLON, "EXPECTED_ASSIGNMENT_FOR_KEY_VALUE_INSTANTIATION");
       const value = expression();
 
-      values.push({ key: key.value, value });
-    }
-
-    return values;
+      return {key: key.value, value};
+    });
   }
 
   function orderedInstantiation(): Expression[] {
-    const values: Expression[] = [];
-
-    let isFirstValue = true;
-    while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if(!isFirstValue) {
-        reader.consume(TokenType.COMMA, "Expected comma for next value in instantiation");
-      }
-      isFirstValue = false;
-
-      const value = expression();
-
-      values.push(value);
-    }
-
-    return values;
+    return mapWithCommasUntil<Expression>(TokenType.BRACKET_CLOSE, () => expression());
   }
 
   function valaccessor(value: Accessor): ValAccessor {
@@ -377,27 +335,17 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
   }
 
   function invocation(): Invocation {
-    reader.consume(TokenType.PAREN_OPEN, "Expected invocation");
-    const args: Expression[] = [];
+    reader.consume(TokenType.PAREN_OPEN, "EXPECTED_INVOCATION");
 
-    let isFirstArgument = true;
-    while(reader.peek().type != TokenType.PAREN_CLOSE) {
-      if (!isFirstArgument) {
-        reader.consume(TokenType.COMMA, "Expected comma after argument");
-      }
-      isFirstArgument = false;
+    const args = mapWithCommasUntil<Expression>(TokenType.PAREN_CLOSE, () => expression());
 
-      const expr = expression();
-      args.push(expr);
-    }
-
-    reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
+    reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_CLOSING_PARENTHESIS");
 
     return ast.invocation(args);
   }
 
   function accessor(): Accessor {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected identifier for accessor");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_IDENTIFIER_FOR_ACCESSOR");
 
     if (reader.match(TokenType.DOT)) {
       const subAccessor = accessor();
@@ -406,6 +354,27 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
     }
 
     return ast.accessor(name.value);
+  }
+
+  function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T): T[] {
+    let isFirstValue = true;
+    return mapUntil<T>(untilToken, () => {
+      if (!isFirstValue) {
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BETWEEN_EXPRESSIONS");
+      }
+      isFirstValue = false;
+
+      return map();
+    });
+  }
+
+  function mapUntil<T>(untilToken: TokenType, map: () => T): T[] {
+    const values = [];
+    while(reader.peek().type !== untilToken) {
+      values.push(map());
+    }
+
+    return values;
   }
 
   function recover() {
@@ -422,5 +391,19 @@ export function parse(reader: TokenReader): { program: Program, errors: string[]
     }
   }
 
-  return { program: program(), errors };
+  function reportError(error: any) {
+    if (typeof error === 'string') {
+      reporter.reportRaw(error);
+      return;
+    }
+
+    if (error instanceof ParseError) {
+      reporter.report(error.diagnosticCode, error.diagnosticTemplateValues);
+      return;
+    }
+
+    reporter.reportRaw(JSON.stringify(error));
+  }
+
+  return program();
 }
