@@ -204,6 +204,11 @@
       "code": "EXPECTED_IDENTIFIER_FOR_ACCESSOR",
       "message": "Expected identifier for accessor",
       "severity": "error"
+    },
+    {
+      "code": "EXPECTED_COMMA_BETWEEN_EXPRESSIONS",
+      "message": "Expected comma between expressions",
+      "severity": "error"
     }
   ]
 }

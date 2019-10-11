@@ -72,18 +72,9 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   function objectDeclaration(): ObjectDeclaration {
     reader.consume(TokenType.OBJECT, "EXPECTED_OBJECT_DECLARATION");
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_OBJECT_NAME");
-    const values: ObjectValue[] = [];
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_OBJECT_BODY");
 
-    let isFirstValue = true;
-    while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if (!isFirstValue) {
-        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BETWEEN_VALUES");
-      }
-      isFirstValue = false;
-
-      values.push(objectValue());
-    }
+    const values = mapWithCommasUntil<ObjectValue>(TokenType.BRACKET_CLOSE, () => objectValue());
 
     reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_OBJECT_DECLARATION");
 
@@ -103,14 +94,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_MODULE_NAME");
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_MODULE_BODY");
 
-    const body: (Declaration | Export)[] = [];
-    while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
+    const body = mapUntil<Declaration | Export>(TokenType.BRACKET_CLOSE, () => {
       if (reader.peek().type === TokenType.EXPORT) {
-        body.push(exportStatement());
+        return exportStatement();
       } else {
-        body.push(declaration());
+        return declaration();
       }
-    }
+    });
 
     reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_MODULE_BODY");
 
@@ -133,17 +123,9 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function functionDeclaration(): FunctionDeclaration {
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_DECLARATION");
-    const args: FunctionDeclarationArgument[] = [];
-
     reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
-    let isFirstArgument = true;
-    while(reader.peek().type !== TokenType.PAREN_CLOSE) {
-      if (!isFirstArgument) {
-        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_AFTER_ARGUMENT");
-      }
-      isFirstArgument = false;
-      args.push(functionArgument());
-    }
+
+    const args = mapWithCommasUntil<FunctionDeclarationArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
 
     reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
 
@@ -329,41 +311,17 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function keyValueInstantiation(): KeyValue[] {
-    const values: KeyValue[] = [];
-
-    let isFirstValue = true;
-    while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if (!isFirstValue) {
-        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BEFORE_NEXT_VALUE");
-      }
-      isFirstValue = false;
-
+    return mapWithCommasUntil<KeyValue>(TokenType.BRACKET_CLOSE, () => {
       const key = reader.consume(TokenType.IDENTIFIER, "EXPECTED_KEY_FOR_KEY_VALUE_INSTANTIATION");
       reader.consume(TokenType.COLON, "EXPECTED_ASSIGNMENT_FOR_KEY_VALUE_INSTANTIATION");
       const value = expression();
 
-      values.push({ key: key.value, value });
-    }
-
-    return values;
+      return {key: key.value, value};
+    });
   }
 
   function orderedInstantiation(): Expression[] {
-    const values: Expression[] = [];
-
-    let isFirstValue = true;
-    while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      if(!isFirstValue) {
-        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BEFORE_NEXT_VALUE");
-      }
-      isFirstValue = false;
-
-      const value = expression();
-
-      values.push(value);
-    }
-
-    return values;
+    return mapWithCommasUntil<Expression>(TokenType.BRACKET_CLOSE, () => expression());
   }
 
   function valaccessor(value: Accessor): ValAccessor {
@@ -378,18 +336,8 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function invocation(): Invocation {
     reader.consume(TokenType.PAREN_OPEN, "EXPECTED_INVOCATION");
-    const args: Expression[] = [];
 
-    let isFirstArgument = true;
-    while(reader.peek().type != TokenType.PAREN_CLOSE) {
-      if (!isFirstArgument) {
-        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_AFTER_ARGUMENT");
-      }
-      isFirstArgument = false;
-
-      const expr = expression();
-      args.push(expr);
-    }
+    const args = mapWithCommasUntil<Expression>(TokenType.PAREN_CLOSE, () => expression());
 
     reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_CLOSING_PARENTHESIS");
 
@@ -406,6 +354,27 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     }
 
     return ast.accessor(name.value);
+  }
+
+  function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T): T[] {
+    let isFirstValue = true;
+    return mapUntil<T>(untilToken, () => {
+      if (!isFirstValue) {
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BETWEEN_EXPRESSIONS");
+      }
+      isFirstValue = false;
+
+      return map();
+    });
+  }
+
+  function mapUntil<T>(untilToken: TokenType, map: () => T): T[] {
+    const values = [];
+    while(reader.peek().type !== untilToken) {
+      values.push(map());
+    }
+
+    return values;
   }
 
   function recover() {
