@@ -29,6 +29,10 @@ export class TokenReader extends IterableReader<Token> {
   }
 
   match(...anyOf: TokenType[]): boolean {
+    if (this.isAtEnd()) {
+      return false;
+    }
+
     const matchingToken = anyOf.find(t => this.peek().type === t);
     if (matchingToken === undefined) {
       return false;

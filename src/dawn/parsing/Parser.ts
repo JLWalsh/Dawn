@@ -91,17 +91,17 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function objectValue(): ObjectValue {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected value name");
-    reader.consume(TokenType.COLON, "Expected colon after value name");
-    const type = reader.consume(TokenType.IDENTIFIER, "Expected type for value");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_VALUE_NAME");
+    reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_VALUE_NAME");
+    const type = reader.consume(TokenType.IDENTIFIER, "EXPECTED_TYPE_FOR_VALUE");
 
-    return { name: name.value, valueType: type.value };
+    return { name: name.value, type: type.value };
   }
 
   function moduleDeclaration(): ModuleDeclaration {
-    reader.consume(TokenType.MODULE, "Expected module declaration");
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected module name");
-    reader.consume(TokenType.BRACKET_OPEN, "Expected body for module");
+    reader.consume(TokenType.MODULE, "EXPECTED_MODULE_DECLARATION");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_MODULE_NAME");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_MODULE_BODY");
 
     const body: (Declaration | Export)[] = [];
     while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
@@ -112,44 +112,44 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       }
     }
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of body for module");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_MODULE_BODY");
 
     return ast.moduleDeclaration(name.value, body);
   }
 
   function importStatement(): Import {
-    reader.consume(TokenType.IMPORT, "Expected import statement");
+    reader.consume(TokenType.IMPORT, "EXPECTED_IMPORT_STATEMENT");
     const acc = accessor();
 
     return ast.import(acc);
   }
 
   function exportStatement(): Export {
-    reader.consume(TokenType.EXPORT, "Expected export statement");
+    reader.consume(TokenType.EXPORT, "EXPECTED_EXPORT_STATEMENT");
     const exported = declaration();
 
     return ast.export(exported);
   }
 
   function functionDeclaration(): FunctionDeclaration {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected function name");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_DECLARATION");
     const args: FunctionDeclarationArgument[] = [];
 
-    reader.consume(TokenType.PAREN_OPEN, "Expected function prototype");
+    reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
     let isFirstArgument = true;
     while(reader.peek().type !== TokenType.PAREN_CLOSE) {
       if (!isFirstArgument) {
-        reader.consume(TokenType.COMMA, "Expected comma after argument");
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_AFTER_ARGUMENT");
       }
       isFirstArgument = false;
       args.push(functionArgument());
     }
 
-    reader.consume(TokenType.PAREN_CLOSE, "Expected end of function arguments");
+    reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
 
     let returnType = null;
     if (reader.match(TokenType.COLON)) {
-      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "Expected return type");
+      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_RETURN_TYPE");
       returnType = returnTypeToken.value;
     }
 
@@ -159,15 +159,15 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function functionArgument(): FunctionDeclarationArgument {
-    const variableName = reader.consume(TokenType.IDENTIFIER, "Expected argument name");
-    reader.consume(TokenType.COLON, "Expected colon after argument name");
-    const variableType = reader.consume(TokenType.IDENTIFIER, "Expected argument type");
+    const variableName = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_NAME");
+    reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_ARGUMENT_NAME");
+    const variableType = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_TYPE");
 
     return ast.functionDeclarationArgument(variableName.value, variableType.value);
   }
 
   function functionBody(): Statement[]  {
-    reader.consume(TokenType.BRACKET_OPEN, "Expected function body");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_FUNCTION_BODY");
     const body = [];
 
     while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
@@ -175,7 +175,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       body.push(stmt);
     }
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of function body");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_FUNCTION_BODY");
 
     return body;
   }
@@ -193,16 +193,16 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function returnStatement(): Return {
-    reader.consume(TokenType.RETURN, "Expected return statement");
+    reader.consume(TokenType.RETURN, "EXPECTED_RETURN_STATEMENT");
     const value = expression();
 
     return ast.return(value);
   }
 
   function valDeclaration(): ValDeclaration {
-    reader.consume(TokenType.VAL, "Expected value declaration");
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected value name");
-    reader.consume(TokenType.EQUALS, "Expected assignment to value");
+    reader.consume(TokenType.VAL, "EXPECTED_VALUE_DECLARATION");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_VALUE_NAME");
+    reader.consume(TokenType.EQUALS, "EXPECTED_ASSIGNMENT_TO_VALUE");
     const initializer = expression();
 
     return ast.valDeclaration(name.value, initializer);
@@ -282,7 +282,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   function literal(): Expression {
     if (reader.match(TokenType.PAREN_OPEN)) {
       const groupedExpression = expression();
-      reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
+      reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_CLOSING_PARENTHESIS");
 
       return groupedExpression;
     }
@@ -298,7 +298,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return ast.literal(token.value, valueType);
     }
 
-    throw new Error("No match found for literal");
+    throw new Error("NO_MATCH_FOUND_FOR_LITERAL");
   }
 
   function undefinedLiteral(): ValAccessor | Instantiation {
@@ -312,7 +312,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function instantiation(objectType: Accessor): Instantiation {
-    reader.consume(TokenType.BRACKET_OPEN, "Expected object instantiation");
+    reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_OBJECT_INSTANTIATION");
 
     let values: Expression[] | KeyValue[] = [];
     if (reader.peek().type !== TokenType.BRACKET_CLOSE) {
@@ -323,7 +323,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       }
     }
 
-    reader.consume(TokenType.BRACKET_CLOSE, "Expected end of object instantiation");
+    reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_OBJECT_INSTANTIATION");
 
     return ast.instantiation(objectType, values);
   }
@@ -334,12 +334,12 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     let isFirstValue = true;
     while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
       if (!isFirstValue) {
-        reader.consume(TokenType.COMMA, "Expected comma for next value in instantiation");
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BEFORE_NEXT_VALUE");
       }
       isFirstValue = false;
 
-      const key = reader.consume(TokenType.IDENTIFIER, "Expected key for key value instantiation");
-      reader.consume(TokenType.COLON, "Expected assignment for key value instantiation");
+      const key = reader.consume(TokenType.IDENTIFIER, "EXPECTED_KEY_FOR_KEY_VALUE_INSTANTIATION");
+      reader.consume(TokenType.COLON, "EXPECTED_ASSIGNMENT_FOR_KEY_VALUE_INSTANTIATION");
       const value = expression();
 
       values.push({ key: key.value, value });
@@ -354,7 +354,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     let isFirstValue = true;
     while (reader.peek().type !== TokenType.BRACKET_CLOSE) {
       if(!isFirstValue) {
-        reader.consume(TokenType.COMMA, "Expected comma for next value in instantiation");
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_BEFORE_NEXT_VALUE");
       }
       isFirstValue = false;
 
@@ -377,13 +377,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function invocation(): Invocation {
-    reader.consume(TokenType.PAREN_OPEN, "Expected invocation");
+    reader.consume(TokenType.PAREN_OPEN, "EXPECTED_INVOCATION");
     const args: Expression[] = [];
 
     let isFirstArgument = true;
     while(reader.peek().type != TokenType.PAREN_CLOSE) {
       if (!isFirstArgument) {
-        reader.consume(TokenType.COMMA, "Expected comma after argument");
+        reader.consume(TokenType.COMMA, "EXPECTED_COMMA_AFTER_ARGUMENT");
       }
       isFirstArgument = false;
 
@@ -391,13 +391,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       args.push(expr);
     }
 
-    reader.consume(TokenType.PAREN_CLOSE, "Expected closing parenthesis");
+    reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_CLOSING_PARENTHESIS");
 
     return ast.invocation(args);
   }
 
   function accessor(): Accessor {
-    const name = reader.consume(TokenType.IDENTIFIER, "Expected identifier for accessor");
+    const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_IDENTIFIER_FOR_ACCESSOR");
 
     if (reader.match(TokenType.DOT)) {
       const subAccessor = accessor();

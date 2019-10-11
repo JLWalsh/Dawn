@@ -44,7 +44,7 @@ class AstNodeBuilder {
     return { type: AstNodeType.INSTANTIATION, objectType, values };
   }
 
-  invocation(args: Expression[]): Invocation {
+  invocation(args: Expression[] = []): Invocation {
     return { type: AstNodeType.INVOCATION, arguments: args };
   }
 
