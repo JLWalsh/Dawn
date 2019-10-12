@@ -16,8 +16,7 @@ import {Invocation} from "@dawn/lang/ast/Invocation";
 import {Instantiation} from "@dawn/lang/ast/Instantiation";
 import {Import} from "@dawn/lang/ast/Import";
 import {Literal} from "@dawn/lang/ast/Literal";
-import {Scope} from "@dawn/interpreter/Scope";
-import {RuntimeModule} from "@dawn/interpreter/RuntimeModule";
+import {Environment} from "@dawn/interpreter/Environment";
 
 export class DawnInterpreter {
 
@@ -30,12 +29,7 @@ export class DawnInterpreter {
 
 class InterpreterAstNodeVisitor implements AstNodeVisitor<void> {
 
-  private readonly callStack = [];
-  private readonly globals: Scope = new Scope();
-  private readonly modules: RuntimeModule[] = [];
-
-  private currentScope: Scope = this.globals;
-  private currentModule: RuntimeModule | void = undefined;
+  private readonly environment: Environment = new Environment();
 
   visitAccessor(a: Accessor): void {
     return undefined;
@@ -78,10 +72,7 @@ class InterpreterAstNodeVisitor implements AstNodeVisitor<void> {
   }
 
   visitModuleDeclaration(m: ModuleDeclaration): void {
-    this.currentScope = new Scope(this.currentScope);
-    this.currentModule = { parent: this.currentModule, name: m.name };
-
-    m.body.forEach(d => d.accept(this));
+    return undefined;
   }
 
   visitObjectDeclaration(o: ObjectDeclaration): void {
@@ -102,6 +93,7 @@ class InterpreterAstNodeVisitor implements AstNodeVisitor<void> {
   }
 
   visitValDeclaration(v: ValDeclaration): void {
+    this.environment.declare(v.name,)
     return undefined;
   }
 

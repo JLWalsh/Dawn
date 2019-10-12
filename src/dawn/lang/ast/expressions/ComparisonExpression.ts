@@ -1,5 +1,5 @@
-import {Expression} from "@dawn/lang/ast/Expression";
-import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
+import {Expression, ExpressionNode} from "@dawn/lang/ast/Expression";
+import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {Token, TokenType} from "@dawn/parsing/Token";
 
 export enum ComparisonOperator {
@@ -24,7 +24,7 @@ export function findComparisonOperator(operatorToken: Token): ComparisonOperator
   throw new Error(`Operator ${operatorToken.lexeme} is not available for comparison expressions`);
 }
 
-export interface ComparisonExpression extends AstNode {
+export interface ComparisonExpression extends ExpressionNode {
   type: AstNodeType.COMPARISON;
   left: Expression;
   operator: ComparisonOperator;

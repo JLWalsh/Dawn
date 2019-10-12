@@ -1,5 +1,5 @@
-import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
-import {Expression} from "@dawn/lang/ast/Expression";
+import {AstNodeType} from "@dawn/lang/ast/AstNode";
+import {Expression, ExpressionNode} from "@dawn/lang/ast/Expression";
 import {Token, TokenType} from "@dawn/parsing/Token";
 
 export enum BinaryOperator {
@@ -24,7 +24,7 @@ export function findBinaryExpressionOperator(token: Token) {
   throw new Error(`Operator ${token.lexeme} is not available for binary expressions`);
 }
 
-export interface BinaryExpression extends AstNode {
+export interface BinaryExpression extends ExpressionNode {
   type: AstNodeType.BINARY;
   left: Expression;
   operator: BinaryOperator;

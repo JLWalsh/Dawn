@@ -221,7 +221,7 @@ testFunction(one: int, two: float, three: int) {
 
     expect(diagnosticReporter.reportRaw).not.toHaveBeenCalled();
     expect(diagnosticReporter.report).not.toHaveBeenCalled();
-    expect(program).toEqual(expectedNodes);
+    expect(JSON.stringify(program)).toEqual(JSON.stringify(expectedNodes));
   }
 
   function parseInFunctionBody(template: TemplateStringsArray) {

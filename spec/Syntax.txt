@@ -1,11 +1,12 @@
 ### Dawn Syntax
 
-program         -> *
+program        -> programdecl*
 
 programdecl    -> moduledecl
                 | objectdecl
                 | funcdecl
                 | import
+                | valdecl
 
 import          -> "import" accessor
 
@@ -16,7 +17,7 @@ decl            -> objectdecl
 
 moduledecl      -> "module" IDENTIFIER "{" (decl | export)* "}"
 
-export          -> decl
+export          -> "export" decl
 
 objectdecl      -> "object" IDENTIFIER "{" objectvaldecl* "}"
 
@@ -35,7 +36,7 @@ statement       -> return
                 |  valdecl
                 |  expr
 
-return          -> expr
+return          -> "return" expr
 
 expr            -> equality
 
