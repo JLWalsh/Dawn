@@ -20,7 +20,8 @@
   "scripts": {
     "test": "jest",
     "run": "node build/main.js",
-    "build": "tsc"
+    "build": "tsc",
+    "check-diagnostics": "ts-node ./scripts/checkDiagnostics.ts ./src/dawn/ui/diagnostics/parserDiagnostics.json"
   },
   "author": "",
   "license": "ISC",

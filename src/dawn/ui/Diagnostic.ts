@@ -3,7 +3,11 @@ export enum DiagnosticLevel {
   ERROR = "error"
 }
 
-export interface DiagnosticTemplate {
+export interface DiagnosticFile {
+  templates: Diagnostic[];
+}
+
+export interface Diagnostic {
   code: string;
   message: string;
   level: DiagnosticLevel
