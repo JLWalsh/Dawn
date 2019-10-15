@@ -1,8 +1,9 @@
 import {TokenType} from "@dawn/parsing/Token";
 
 export enum NativeType {
-  FLOAT,
-  INT
+  FLOAT = 'float',
+  INT = 'int',
+  BOOLEAN = 'boolean',
 }
 
 export function tokenTypeToNativeType(tokenType: TokenType): NativeType {

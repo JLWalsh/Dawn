@@ -1,101 +1,90 @@
-import {Program} from "@dawn/lang/ast/Program";
-import {AstNodeVisitor} from "@dawn/lang/ast/AstNode";
-import {Accessor} from "@dawn/lang/ast/Accessor";
-import {BinaryExpression} from "@dawn/lang/ast/expressions/BinaryExpression";
-import {ComparisonExpression} from "@dawn/lang/ast/expressions/ComparisonExpression";
-import {EqualityExpression} from "@dawn/lang/ast/expressions/EqualityExpression";
-import {Export} from "@dawn/lang/ast/Export";
-import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
-import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
-import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
-import {UnaryExpression} from "@dawn/lang/ast/expressions/UnaryExpression";
-import {Return} from "@dawn/lang/ast/Return";
-import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
-import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
-import {Invocation} from "@dawn/lang/ast/Invocation";
+import {RuntimeValue} from "@dawn/interpreter/RuntimeValue";
+import {Expression, ExpressionVisitor} from "@dawn/lang/ast/Expression";
+import {BinaryExpression, BinaryOperator} from "@dawn/lang/ast/expressions/BinaryExpression";
+import {ComparisonExpression, ComparisonOperator} from "@dawn/lang/ast/expressions/ComparisonExpression";
+import {EqualityExpression, EqualityOperator} from "@dawn/lang/ast/expressions/EqualityExpression";
 import {Instantiation} from "@dawn/lang/ast/Instantiation";
-import {Import} from "@dawn/lang/ast/Import";
 import {Literal} from "@dawn/lang/ast/Literal";
+import {UnaryExpression} from "@dawn/lang/ast/expressions/UnaryExpression";
+import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
+import {NativeType} from "@dawn/lang/NativeType";
 import {Environment} from "@dawn/interpreter/Environment";
+import {SymbolTable} from "@dawn/interpreter/SymbolTable";
 
-export class DawnInterpreter {
+export class DawnInterpreter implements ExpressionVisitor<RuntimeValue> {
 
-  interpret(program: Program) {
-    const visitor = new InterpreterAstNodeVisitor();
+  private readonly globalEnvironment = new Environment();
+  private readonly symbolTable = new SymbolTable();
 
-    program.body.forEach(e => e.accept(visitor));
+  evaluate(expression: Expression): RuntimeValue {
+    return expression.acceptExpressionVisitor(this);
+  }
+
+  visitBinary(b: BinaryExpression): RuntimeValue {
+    const left = b.acceptExpressionVisitor(this);
+    const right = b.acceptExpressionVisitor(this);
+    if (left.type !== right.type) {
+      throw new Error(`Type ${left.type} is not compatible with ${right.type}`);
+    }
+
+    let newValue: any;
+    switch(b.operator) {
+      case BinaryOperator.ADD: newValue = left.value + right.value; break;
+      case BinaryOperator.SUBTRACT: newValue = left.value - right.value; break;
+      case BinaryOperator.MULTIPLY: newValue = left.value * right.value; break;
+      case BinaryOperator.DIVIDE: newValue = left.value / right.value; break;
+    }
+
+    return { type: left.type, value: newValue };
+  }
+
+  visitComparison(c: ComparisonExpression): RuntimeValue {
+    const left = c.acceptExpressionVisitor(this);
+    const right = c.acceptExpressionVisitor(this);
+    if (left.type !== right.type) {
+      throw new Error(`Type ${left.type} cannot be compared to ${right.type}`);
+    }
+
+    let comparison: any;
+    switch(c.operator) {
+      case ComparisonOperator.GREATER_EQUAL_THAN: comparison = left.value >= right.value; break;
+      case ComparisonOperator.GREATER_THAN: comparison = left.value > right.value; break;
+      case ComparisonOperator.LESSER_EQUAL_THAN: comparison = left.value <= right.value; break;
+      case ComparisonOperator.LESSER_THAN: comparison = left.value < right.value; break;
+    }
+
+    return { type: NativeType.BOOLEAN, value: comparison };
+  }
+
+  visitEquality(e: EqualityExpression): RuntimeValue {
+    const left = e.acceptExpressionVisitor(this);
+    const right = e.acceptExpressionVisitor(this);
+    if (left.type !== right.type) {
+      throw new Error(`Type ${left.type} cannot be compared to ${right.type}`);
+    }
+
+    let comparison: any;
+    switch(e.operator) {
+      case EqualityOperator.EQUALS: comparison = left.value === right.value; break;
+      case EqualityOperator.NOT_EQUAL: comparison = left.value !== right.value; break;
+    }
+
+    return { type: NativeType.BOOLEAN, value: comparison };
+  }
+
+  visitInstantiation(i: Instantiation): RuntimeValue {
+
+  }
+
+  visitLiteral(l: Literal): RuntimeValue {
+    return undefined;
+  }
+
+  visitUnary(u: UnaryExpression): RuntimeValue {
+    return undefined;
+  }
+
+  visitValAccessor(v: ValAccessor): RuntimeValue {
+    return undefined;
   }
 }
-
-class InterpreterAstNodeVisitor implements AstNodeVisitor<void> {
-
-  private readonly environment: Environment = new Environment();
-
-  visitAccessor(a: Accessor): void {
-    return undefined;
-  }
-
-  visitBinary(b: BinaryExpression): void {
-    return undefined;
-  }
-
-  visitComparison(c: ComparisonExpression): void {
-    return undefined;
-  }
-
-  visitEquality(e: EqualityExpression): void {
-    return undefined;
-  }
-
-  visitExport(e: Export): void {
-    return undefined;
-  }
-
-  visitFunctionDeclaration(f: FunctionDeclaration): void {
-    return undefined;
-  }
-
-  visitImport(i: Import): void {
-    return undefined;
-  }
-
-  visitInstantiation(i: Instantiation): void {
-    return undefined;
-  }
-
-  visitInvocation(i: Invocation): void {
-    return undefined;
-  }
-
-  visitLiteral(l: Literal): void {
-    return undefined;
-  }
-
-  visitModuleDeclaration(m: ModuleDeclaration): void {
-    return undefined;
-  }
-
-  visitObjectDeclaration(o: ObjectDeclaration): void {
-    return undefined;
-  }
-
-  visitReturn(r: Return): void {
-    return undefined;
-  }
-
-  visitUnary(u: UnaryExpression): void {
-    return undefined;
-  }
-
-  visitValAccessor(v: ValAccessor): void {
-
-    return undefined;
-  }
-
-  visitValDeclaration(v: ValDeclaration): void {
-    this.environment.declare(v.name,)
-    return undefined;
-  }
-
-}
-

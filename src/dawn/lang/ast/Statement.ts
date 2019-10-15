@@ -13,7 +13,7 @@ export type Statement =
   | ValDeclaration;
 
 export interface StatementVisitor<T> {
-  visitExpression(e: Expression): T;
+  visitExpressionStatement(e: Expression): T;
   visitReturn(r: Return): T;
   visitValDeclaration(v: ValDeclaration): T;
 }

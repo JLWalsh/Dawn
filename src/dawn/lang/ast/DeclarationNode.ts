@@ -16,6 +16,10 @@ export type Declaration =
   | FunctionDeclaration
   | ValDeclaration;
 
+export type NamedDeclaration = Declaration & {
+  name: string;
+}
+
 export interface DeclarationVisitor<T> {
   visitFunctionDeclaration(f: FunctionDeclaration): T;
   visitModuleDeclaration(m: ModuleDeclaration): T;
