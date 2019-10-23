@@ -1,17 +1,17 @@
-import math
+import math # Lookup moduleSymbol from global env
 
 module example {
 
     export object Rectangle {
-        height: int,
-        width: int
+        height: int, # Lookup typesymbol from global env
+        width: int # Idem
     }
 
     export object Circle {
-        radius: int
+        radius: int # Idem
     }
 
-    export calculateArea(rectangle: Rectangle): float {
+    export calculateArea(rectangle: Rectangle): float { # Lookup typesymbol Rectangle from module first, then upper scope (global)
         return rectangle.height * rectangle.width
     }
 

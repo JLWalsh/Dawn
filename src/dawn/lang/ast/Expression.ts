@@ -5,8 +5,9 @@ import {BinaryExpression} from "@dawn/lang/ast/expressions/BinaryExpression";
 import {ComparisonExpression} from "@dawn/lang/ast/expressions/ComparisonExpression";
 import {EqualityExpression} from "@dawn/lang/ast/expressions/EqualityExpression";
 import {Instantiation} from "@dawn/lang/ast/Instantiation";
+import {StatementNode} from "@dawn/lang/ast/Statement";
 
-export interface ExpressionNode {
+export interface ExpressionNode extends StatementNode {
   acceptExpressionVisitor<T>(expressionVisitor: ExpressionVisitor<T>): T;
 }
 
