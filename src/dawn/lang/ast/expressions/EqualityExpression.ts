@@ -1,5 +1,5 @@
-import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
-import {Expression} from "@dawn/lang/ast/Expression";
+import {AstNodeType} from "@dawn/lang/ast/AstNode";
+import {Expression, ExpressionNode} from "@dawn/lang/ast/Expression";
 import {Token, TokenType} from "@dawn/parsing/Token";
 
 export enum EqualityOperator {
@@ -18,7 +18,7 @@ export function findEqualityOperator(operatorToken: Token) {
   throw new Error(`Operator ${operatorToken.lexeme} is not available for equality expressions`);
 }
 
-export interface EqualityExpression extends AstNode {
+export interface EqualityExpression extends ExpressionNode {
   type: AstNodeType.EQUALITY;
   left: Expression;
   operator: EqualityOperator;

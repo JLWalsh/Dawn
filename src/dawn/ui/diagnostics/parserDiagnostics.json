@@ -36,11 +36,6 @@
       "severity": "error"
     },
     {
-      "code": "EXPECTED_VALUE_NAME",
-      "message": "Expected value name",
-      "severity": "error"
-    },
-    {
       "code": "EXPECTED_COLON_AFTER_VALUE_NAME",
       "message": "Expected colon after value name",
       "severity": "error"
@@ -83,11 +78,6 @@
     {
       "code": "EXPECTED_FUNCTION_PROTOTYPE",
       "message": "Expected function prototype",
-      "severity": "error"
-    },
-    {
-      "code": "EXPECTED_COMMA_AFTER_ARGUMENT",
-      "message": "Expected comma after argument",
       "severity": "error"
     },
     {
@@ -166,11 +156,6 @@
       "severity": "error"
     },
     {
-      "code": "EXPECTED_COMMA_BEFORE_NEXT_VALUE",
-      "message": "Expected comma before next value",
-      "severity": "error"
-    },
-    {
       "code": "EXPECTED_KEY_FOR_KEY_VALUE_INSTANTIATION",
       "message": "Expected key for key value instantiation",
       "severity": "error"
@@ -193,11 +178,6 @@
     {
       "code": "EXPECTED_COMMA_AFTER_ARGUMENT",
       "message": "Expected comma after argument",
-      "severity": "error"
-    },
-    {
-      "code": "EXPECTED_CLOSING_PARENTHESIS",
-      "message": "Expected closing parenthesis",
       "severity": "error"
     },
     {

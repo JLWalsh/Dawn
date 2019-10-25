@@ -1,9 +1,11 @@
-import {AstNode, AstNodeType} from "@dawn/lang/ast/AstNode";
-import {Declaration} from "@dawn/lang/ast/Declaration";
+import {AstNodeType} from "@dawn/lang/ast/AstNode";
+import {Declaration, DeclarationNode} from "@dawn/lang/ast/DeclarationNode";
 import {Export} from "@dawn/lang/ast/Export";
 
-export interface ModuleDeclaration extends AstNode {
+export type ModuleContent = Declaration | Export;
+
+export interface ModuleDeclaration extends DeclarationNode {
   type: AstNodeType.MODULE_DECLARATION;
   name: string;
-  body: (Export | Declaration)[];
+  body: ModuleContent[];
 }

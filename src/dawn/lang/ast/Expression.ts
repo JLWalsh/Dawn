@@ -5,6 +5,11 @@ import {BinaryExpression} from "@dawn/lang/ast/expressions/BinaryExpression";
 import {ComparisonExpression} from "@dawn/lang/ast/expressions/ComparisonExpression";
 import {EqualityExpression} from "@dawn/lang/ast/expressions/EqualityExpression";
 import {Instantiation} from "@dawn/lang/ast/Instantiation";
+import {StatementNode} from "@dawn/lang/ast/Statement";
+
+export interface ExpressionNode extends StatementNode {
+  acceptExpressionVisitor<T>(expressionVisitor: ExpressionVisitor<T>): T;
+}
 
 export type Expression =
   | EqualityExpression
@@ -14,3 +19,13 @@ export type Expression =
   | BinaryExpression
   | ComparisonExpression
   | Instantiation;
+
+export interface ExpressionVisitor<T> {
+  visitEquality(e: EqualityExpression): T;
+  visitUnary(u: UnaryExpression): T;
+  visitValAccessor(v: ValAccessor): T;
+  visitLiteral(l: Literal): T;
+  visitBinary(b: BinaryExpression): T;
+  visitComparison(c: ComparisonExpression): T;
+  visitInstantiation(i: Instantiation): T;
+}

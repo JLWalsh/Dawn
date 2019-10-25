@@ -17,10 +17,10 @@ export enum AstNodeType {
   ACCESSOR,
   VALACCESSOR,
 
-  INVOCATION,
   INSTANTIATION,
 }
 
 export interface AstNode {
   type: AstNodeType;
 }
+

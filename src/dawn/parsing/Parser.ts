@@ -13,9 +13,9 @@ import {FunctionDeclarationArgument} from "@dawn/lang/ast/declarations/FunctionD
 import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
 import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {Instantiation, KeyValue} from "@dawn/lang/ast/Instantiation";
-import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
+import {ModuleContent, ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {Export} from "@dawn/lang/ast/Export";
-import {Declaration} from "@dawn/lang/ast/Declaration";
+import {Declaration} from "@dawn/lang/ast/DeclarationNode";
 import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/ObjectDeclaration";
 import {Import} from "@dawn/lang/ast/Import";
 import {Program, ProgramContent} from "@dawn/lang/ast/Program";
@@ -37,7 +37,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       }
     }
 
-    return { body };
+    return ast.program(body);
   }
 
   function programContent(): ProgramContent {
@@ -94,7 +94,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_MODULE_NAME");
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_MODULE_BODY");
 
-    const body = mapUntil<Declaration | Export>(TokenType.BRACKET_CLOSE, () => {
+    const body = mapUntil<ModuleContent>(TokenType.BRACKET_CLOSE, () => {
       if (reader.peek().type === TokenType.EXPORT) {
         return exportStatement();
       } else {
