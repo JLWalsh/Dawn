@@ -22,6 +22,28 @@ describe('SymbolResolver', () => {
     });
   });
 
+  describe('given symbol in upper module', () => {
+    it('should resolve symbol when addressed directly', () => {
+      const module = givenModuleTopology({ parent: { bob: true, child: {} } }, EXTERNAL_SYMBOL);
+      const childModule = getModule('parent.child', module);
+      const accessor = givenAccessor('bob');
+
+      const symbol = symbolResolver.resolve(accessor, childModule);
+
+      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+    });
+
+    it('should resolve symbol when addressed using parent', () => {
+      const module = givenModuleTopology({ parent: { bob: true, child: {} } }, EXTERNAL_SYMBOL);
+      const childModule = getModule('parent.child', module);
+      const accessor = givenAccessor('parent.bob');
+
+      const symbol = symbolResolver.resolve(accessor, childModule);
+
+      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+    });
+  });
+
   describe('given external symbol in child module', () => {
     it('should resolve symbol', () => {
       const module = givenModuleTopology({ module: { bob: true } }, EXTERNAL_SYMBOL);
@@ -34,7 +56,7 @@ describe('SymbolResolver', () => {
   });
 
   describe('given internal symbol in child module', () => {
-    it('should resolve symbol', () => {
+    it('should not resolve symbol', () => {
       const module = givenModuleTopology({ module: { bob: true } }, INTERNAL_SYMBOL);
       const accessor = givenAccessor('module.bob');
 
@@ -45,8 +67,10 @@ describe('SymbolResolver', () => {
   });
 
   describe('given symbol in module at same level', () => {
+    const module = givenModuleTopology({ parent: { a: { bob: true }, b: {} } }, EXTERNAL_SYMBOL);
+    const moduleB = getModule('parent.b', module);
+
     it('should resolve symbol when accessed using parent module', () => {
-      const moduleB = givenModuleTopology({ parent: { a: { bob: true }, b: {} } }, EXTERNAL_SYMBOL, 'b');
       const accessor = givenAccessor('parent.a.bob');
 
       const symbol = symbolResolver.resolve(accessor, moduleB);
@@ -54,7 +78,21 @@ describe('SymbolResolver', () => {
       expect(symbol).toEqual(EXTERNAL_SYMBOL);
     });
 
-    it('should resolve symbol when accessed directly')
+    it('should resolve symbol when accessed directly', () => {
+      const accessor = givenAccessor('a.bob');
+
+      const symbol = symbolResolver.resolve(accessor, moduleB);
+
+      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+    });
+
+    it('should not resolve symbol when accessed using other module at same level', () => {
+      const accessor = givenAccessor('parent.b.a.bob');
+
+      const symbol = symbolResolver.resolve(accessor, moduleB);
+
+      expect(symbol).toBeUndefined();
+    });
   });
 
   interface ModuleTopology {
@@ -74,16 +112,12 @@ describe('SymbolResolver', () => {
       }, {} as Accessor);
   }
 
-  function givenModuleTopology(modules: ModuleTopology, symbolToDefine: ISymbol, startAtModule?: string): ModuleSymbol {
-    const parent = new ModuleSymbol(SymbolVisibility.INTERNAL);
-    let startModule = parent;
+  function givenModuleTopology(modules: ModuleTopology, symbolToDefine: ISymbol, parentModule?: ModuleSymbol)  {
+    const parent = new ModuleSymbol(SymbolVisibility.EXPORTED, parentModule);
     Object.keys(modules).forEach(symbolName => {
       const symbol = modules[symbolName];
       if (typeof symbol !== 'boolean') {
-        const module = givenModuleTopology(symbol, symbolToDefine);
-        if (symbolName === startAtModule) {
-          startModule = module;
-        }
+        const module = givenModuleTopology(symbol, symbolToDefine, parent);
 
         parent.define(symbolName, module);
       } else {
@@ -91,6 +125,14 @@ describe('SymbolResolver', () => {
       }
     });
 
-    return startModule;
+    return parent;
+  }
+
+  function getModule(modulePath: string, module: ModuleSymbol) {
+    return modulePath
+      .split('.')
+      .reduce((currentModule, moduleName) => {
+        return currentModule.downwardsLookup(moduleName) as ModuleSymbol;
+      }, module);
   }
 });
