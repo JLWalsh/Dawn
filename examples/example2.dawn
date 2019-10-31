@@ -1,0 +1,53 @@
+
+module example {
+
+    object Rectangle {
+        width: float
+        height: float
+    }
+
+    module submodule {
+        export object shadowed {
+
+        }
+
+        module a {
+            object a {
+
+            }
+        }
+
+        doSomething() {
+            # Simple recursive lookup, where we lookup at the current symbol table, and look in upper scopes
+            # This is called an upward lookup, as we look at scopes above us for the symbol
+            val rekt = Rectangle { 10f, 20f }
+
+        }
+    }
+
+    module sub {
+
+        doSom() {
+            val s = submodule.shadowed {}
+        }
+    }
+
+    fromInside() {
+        val x = submodule.a.a { width: 10f, height: 20f }
+    }
+}
+
+# Lookup example
+# Lookup Rectangle in example
+# This is call a downward lookup, as we look at scopes beneath us for the symbol
+val rectangle = example.Rectangle { 10f, 20f }
+
+val a = example.submodule.a.a {}
+val c = example.submodule.a.shadowed {}
+# Globals
+# module example
+#   object Rectangle
+#       float width
+#       float height
+#   function fromInside -> void
+#
