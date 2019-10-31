@@ -17,7 +17,11 @@ export class SymbolResolver {
     return symbol;
   }
 
-  drilldownResolve(symbolValue: Accessor, currentModule: ModuleSymbol): ISymbol | void {
+  // A drilldown resolve is when we can only do downwards lookup from now on
+  // For example, if we were to lookup a.b.c, and a contained b and c,
+  // An normal resolve would find a, then find b, then find c by looking a from b
+  // Obviously, this shouldn't be allowed, which is why downward lookups are implemented
+  private drilldownResolve(symbolValue: Accessor, currentModule: ModuleSymbol): ISymbol | void {
     const symbol = currentModule.downwardsLookup(symbolValue.name);
     if (symbol instanceof ModuleSymbol && symbolValue.subAccessor) {
       return this.drilldownResolve(symbolValue.subAccessor, symbol);
