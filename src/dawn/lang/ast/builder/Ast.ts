@@ -10,7 +10,7 @@ import {Invocation} from "@dawn/lang/ast/Invocation";
 import {Return} from "@dawn/lang/ast/Return";
 import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
 import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
-import {FunctionDeclarationArgument} from "@dawn/lang/ast/declarations/FunctionDeclarationArgument";
+import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
 import {Statement, StatementVisitor} from "@dawn/lang/ast/Statement";
 import {ModuleContent, ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/ObjectDeclaration";
@@ -76,7 +76,7 @@ class AstNodeBuilder {
     };
   }
 
-  functionDeclaration(name: string, args: FunctionDeclarationArgument[], returnType: string | null, body: Statement[]): FunctionDeclaration {
+  functionDeclaration(name: string, args: FunctionArgument[], returnType: string | null, body: Statement[]): FunctionDeclaration {
     return { type: AstNodeType.FUNCTION_DECLARATION, name, args, returnType, body,
       acceptDeclarationVisitor<T>(visitor: DeclarationVisitor<T>): T {
         return visitor.visitFunctionDeclaration(this);
@@ -84,7 +84,7 @@ class AstNodeBuilder {
     };
   }
 
-  functionDeclarationArgument(valueName: string, valueType: string): FunctionDeclarationArgument {
+  functionDeclarationArgument(valueName: string, valueType: string): FunctionArgument {
     return { valueName, valueType };
   }
 

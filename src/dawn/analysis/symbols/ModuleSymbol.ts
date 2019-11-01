@@ -1,5 +1,5 @@
 import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {SymbolAlreadyDefinedError} from "@dawn/analysis/symbols/errors/SymbolAlreadyDefinedError";
+import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
 
 export class ModuleSymbol implements ISymbol {
 
@@ -16,7 +16,7 @@ export class ModuleSymbol implements ISymbol {
   define(symbolName: string, symbol: ISymbol) {
     const existingSymbol = this.symbols.get(symbolName);
     if (existingSymbol) {
-      throw new SymbolAlreadyDefinedError(existingSymbol);
+      throw new SymbolAlreadyDefinedError(existingSymbol, symbol);
     }
 
     this.symbols.set(symbolName, symbol);
@@ -38,5 +38,13 @@ export class ModuleSymbol implements ISymbol {
     if (symbol && symbol.visibility === SymbolVisibility.EXPORTED) {
       return symbol;
     }
+  }
+
+  get(symbolName: string): ISymbol | void {
+    return this.symbols.get(symbolName);
+  }
+
+  getParent() {
+    return this.parentModule;
   }
 }

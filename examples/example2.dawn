@@ -7,6 +7,9 @@ module example {
     }
 
     module submodule {
+        val x = 4.1416i
+        val y = Rectangle { 10i, 30i }
+
         export object shadowed {
 
         }

@@ -1,4 +1,4 @@
-import {SymbolResolver} from "@dawn/analysis/symbols/SymbolResolver";
+import {SymbolResolver} from "@dawn/analysis/SymbolResolver";
 import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
