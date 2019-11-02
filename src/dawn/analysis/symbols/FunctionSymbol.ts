@@ -1,9 +1,11 @@
 import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
+import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
 
 export interface FunctionSymbolPrototype {
   returnType: string | null;
   args: FunctionArgument[];
+  implementation: FunctionDeclaration;
 }
 
 export class FunctionSymbol implements ISymbol {
@@ -12,10 +14,14 @@ export class FunctionSymbol implements ISymbol {
 
   constructor(
     public readonly visibility: SymbolVisibility,
-    private readonly name: string,
+    public readonly name: string,
   ) {}
 
-  definePrototype(args: FunctionArgument[], returnType: string | null) {
-    this.prototypes.push({ args, returnType });
+  definePrototype(implementation: FunctionDeclaration, args: FunctionArgument[], returnType: string | null) {
+    this.prototypes.push({ args, returnType, implementation });
+  }
+
+  getImplementations() {
+    return this.prototypes.map(p => p.implementation);
   }
 }

@@ -6,14 +6,23 @@ import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {ConstantSymbol} from "@dawn/analysis/symbols/ConstantSymbol";
+import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
+import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
+import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
+import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
+import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
+import {FunctionVisibilityMismatchError} from "@dawn/analysis/errors/FunctionVisibilityMismatchError";
+import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
 
 describe('SymbolParser', () => {
   const symbolParser = new SymbolParser();
+  let expectedModule: ModuleSymbol;
+
+  beforeEach(() => expectedModule = givenGlobalModule());
 
   describe('given some exported symbols in module', () => {
-    it('should mark the exported symbols as exported', () => {
-      const ast = generateAst`
+    it('should parse exported and internal symbols in module', () => {
+      const program = generateAst`
         module A {
           export val x = 10i
           
@@ -22,32 +31,95 @@ describe('SymbolParser', () => {
           export val y = 30i
         }
       `;
-      const moduleA = givenModuleWith('A',
-        new ConstantSymbol(SymbolVisibility.EXPORTED, 'x'),
-        new ConstantSymbol(SymbolVisibility.EXPORTED, 'z'),
-        new ConstantSymbol(SymbolVisibility.EXPORTED, 'y'),
+
+      const symbols = symbolParser.parseAllSymbols(program);
+
+      expectModule('A', expectedModule,
+        new ValSymbol(SymbolVisibility.EXPORTED, 'x'),
+        new ValSymbol(SymbolVisibility.INTERNAL, 'z'),
+        new ValSymbol(SymbolVisibility.EXPORTED, 'y'),
       );
-
-      const symbols = symbolParser.parseAllSymbols(ast);
-
-      expect(symbols).toEqual(givenGlobalModuleWith(moduleA));
+      expect(symbols).toEqual(expectedModule);
     });
 
-    it('should mark the not exported symbols as internal', () => {
+    it('should define all prototypes of an overloaded function', () => {
+      const program = generateAst`
+        module A {
+          
+          overloaded(a: int) {
+          
+          }
+          
+          overloaded(a: string) {
+          
+          }
+          
+        }
+      `;
 
+      const symbols = symbolParser.parseAllSymbols(program);
+
+      const functionSymbol = new FunctionSymbol(SymbolVisibility.INTERNAL, 'overloaded');
+      functionSymbol.definePrototype([{ valueName: 'a', valueType: 'int' }], null);
+      functionSymbol.definePrototype([{ valueName: 'a', valueType: 'string' }], null);
+      expectModule('A', expectedModule, functionSymbol);
+      expect(symbols).toEqual(expectedModule);
     });
+
+    it('should parse an object declaration', () => {
+      const program = generateAst`
+        module A {
+          
+          object Bobby {
+            intValue: int
+          }         
+          
+        }
+      `;
+
+      const symbols = symbolParser.parseAllSymbols(program);
+
+      const objectNode = (program.body[0] as ModuleDeclaration).body[0] as ObjectDeclaration;
+      const objectSymbol = new ObjectDeclarationSymbol(SymbolVisibility.INTERNAL, 'Bobby', objectNode);
+      expectModule('A', expectedModule, objectSymbol);
+      expect(symbols).toEqual(expectedModule);
+    });
+
   });
 
   describe('given a function with multiple prototypes', () => {
     describe('and not all prototypes are exported', () => {
       it('should throw error', () => {
+        const program = generateAst`
+          module A {
+            
+            export aFunction() {
+            
+            }
+            
+            aFunction(b: int) {
+            
+            }
+          }
+        `;
 
+        expect(() => symbolParser.parseAllSymbols(program)).toThrow(FunctionVisibilityMismatchError);
       });
     });
 
     describe('when two prototypes are of the same permutation of types', () => {
       it('should throw error', () => {
+        const program = generateAst`
+          aFunction(b: int) {
+          
+          }
+          
+          aFunction(c: int) {
+          
+          }
+        `;
 
+        expect(() => symbolParser.parseAllSymbols(program)).toThrowError(SymbolAlreadyDefinedError);
       });
     });
   });
@@ -59,17 +131,14 @@ describe('SymbolParser', () => {
     return parse(new TokenReader(tokenization.tokens), new NullDiagnosticReporter());
   }
 
-  function givenModuleWith(name: string, ...symbols: ISymbol[]): ModuleSymbol {
-    const module = new ModuleSymbol(SymbolVisibility.INTERNAL, name);
+  function expectModule(name: string, parent: ModuleSymbol, ...symbols: ISymbol[]) {
+    const module = new ModuleSymbol(SymbolVisibility.INTERNAL, name, parent);
     symbols.forEach(s => module.define(s.name, s));
 
-    return module;
+    parent.define(name, module);
   }
 
-  function givenGlobalModuleWith(...symbols: ISymbol[]): ModuleSymbol {
-    const module = new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME);
-    symbols.forEach(s => module.define(s.name, s));
-
-    return module;
+  function givenGlobalModule(): ModuleSymbol {
+    return new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME);
   }
 });

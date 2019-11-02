@@ -11,21 +11,33 @@ import {SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
 import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
 import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
-import {ConstantSymbol} from "@dawn/analysis/symbols/ConstantSymbol";
+import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
 import {FunctionVisibilityMismatchError} from "@dawn/analysis/errors/FunctionVisibilityMismatchError";
+import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 
-export class SymbolParser implements DeclarationVisitor<void> {
+export class SymbolParser {
 
   public static readonly GLOBAL_MODULE_NAME = '__DAWN_GLOBAL__';
 
-  private currentModule!: ModuleSymbol;
-  private exportNextSymbol: boolean = false;
+  parseAllSymbols(program: Program, diagnosticReporter: DiagnosticReporter): ModuleSymbol {
+    const visitor = new SymbolParserVisitor(diagnosticReporter);
 
-  parseAllSymbols(program: Program): ModuleSymbol {
-    this.currentModule = new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME);
+    program.body.forEach(c => c.acceptDeclarationVisitor(visitor));
 
-    program.body.forEach(c => c.acceptDeclarationVisitor(this));
+    return visitor.getGlobalModule();
+  }
 
+}
+
+class SymbolParserVisitor implements DeclarationVisitor<void> {
+
+  constructor(
+    private readonly diagnosticReporter: DiagnosticReporter,
+    private currentModule = new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME),
+    private exportNextSymbol = false,
+  ) {}
+
+  getGlobalModule() {
     return this.currentModule;
   }
 
@@ -40,11 +52,13 @@ export class SymbolParser implements DeclarationVisitor<void> {
 
     if (existingSymbol) {
       if (!(existingSymbol instanceof FunctionSymbol)) {
-        throw new SymbolAlreadyDefinedError(existingSymbol, functionSymbol);
+        const existingSymbolNode
+        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED", undefined, { subjects: [f, existingSymbol.node] });
+        return;
       }
 
       if (existingSymbol.visibility != functionSymbol.visibility) {
-        throw new FunctionVisibilityMismatchError();
+        this.diagnosticReporter.report("INCONSISTENT_FUNCTION_VISIBILITY", undefined, { subjects: [f] });
       }
 
       this.definePrototype(f, existingSymbol);
@@ -60,7 +74,7 @@ export class SymbolParser implements DeclarationVisitor<void> {
   }
 
   visitModuleDeclaration(m: ModuleDeclaration): void {
-    const module = new ModuleSymbol(this.getSymbolVisibility(), this.currentModule);
+    const module = new ModuleSymbol(this.getSymbolVisibility(), m.name, this.currentModule);
     this.currentModule.define(m.name, module);
     this.currentModule = module;
 
@@ -70,12 +84,12 @@ export class SymbolParser implements DeclarationVisitor<void> {
   }
 
   visitObjectDeclaration(o: ObjectDeclaration): void {
-    const objectDeclarationSymbol = new ObjectDeclarationSymbol(this.getSymbolVisibility(), o.name, o.values);
+    const objectDeclarationSymbol = new ObjectDeclarationSymbol(this.getSymbolVisibility(), o.name, o);
     this.currentModule.define(o.name, objectDeclarationSymbol);
   }
 
   visitValDeclaration(v: ValDeclaration): void {
-    const constantSymbol = new ConstantSymbol(this.getSymbolVisibility(), v.name);
+    const constantSymbol = new ValSymbol(this.getSymbolVisibility(), v.name);
     this.currentModule.define(v.name, constantSymbol);
   }
 
@@ -92,4 +106,5 @@ export class SymbolParser implements DeclarationVisitor<void> {
 
     return SymbolVisibility.INTERNAL;
   }
+
 }
