@@ -3,10 +3,9 @@ import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefi
 
 export class ModuleSymbol implements ISymbol {
 
-  public readonly visibility: SymbolVisibility;
-
   constructor(
-    visibility: SymbolVisibility,
+    public readonly visibility: SymbolVisibility,
+    public readonly name: string,
     private readonly parentModule: ModuleSymbol | void = undefined,
     private readonly symbols: Map<string, ISymbol> = new Map(),
 ) {

@@ -16,11 +16,13 @@ import {FunctionVisibilityMismatchError} from "@dawn/analysis/errors/FunctionVis
 
 export class SymbolParser implements DeclarationVisitor<void> {
 
+  public static readonly GLOBAL_MODULE_NAME = '__DAWN_GLOBAL__';
+
   private currentModule!: ModuleSymbol;
   private exportNextSymbol: boolean = false;
 
   parseAllSymbols(program: Program): ModuleSymbol {
-    this.currentModule = new ModuleSymbol(SymbolVisibility.INTERNAL);
+    this.currentModule = new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME);
 
     program.body.forEach(c => c.acceptDeclarationVisitor(this));
 

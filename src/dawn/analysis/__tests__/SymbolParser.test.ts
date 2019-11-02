@@ -5,42 +5,37 @@ import {TokenReader} from "@dawn/parsing/TokenReader";
 import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
-import {SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {ConstantSymbol} from "@dawn/analysis/symbols/ConstantSymbol";
 
 describe('SymbolParser', () => {
   const symbolParser = new SymbolParser();
 
-  it('should parse complete program', () => {
-    const ast = generateAst`
-      module A {
-        object ObjectOfA {}
-        
-        module B {
-          val valueOfB = 30i
+  describe('given some exported symbols in module', () => {
+    it('should mark the exported symbols as exported', () => {
+      const ast = generateAst`
+        module A {
+          export val x = 10i
           
-          functionOfB() { return 10i }
+          val z = 20i
           
+          export val y = 30i
         }
-        
-        functionOfA(name: string): int { return 10i }
-        
-        functionOfA(nameAsInt: int): int { return 10i }
-      }
-      
-      val globalValue = 10i
-      
-      globalFunction() {
-        
-      }
-    `;
-    const expectedModule = new ModuleSymbol(SymbolVisibility.INTERNAL);
-    expectedModule.define('globalValue', new ConstantSymbol(SymbolVisibility.INTERNAL, 'globalValue'));
-    expectedModule.define('globalFunction', new );
+      `;
+      const moduleA = givenModuleWith('A',
+        new ConstantSymbol(SymbolVisibility.EXPORTED, 'x'),
+        new ConstantSymbol(SymbolVisibility.EXPORTED, 'z'),
+        new ConstantSymbol(SymbolVisibility.EXPORTED, 'y'),
+      );
 
-    const globalModule = symbolParser.parseAllSymbols(ast);
+      const symbols = symbolParser.parseAllSymbols(ast);
 
-    expect(globalModule).toEqual(new ModuleSymbol(SymbolVisibility.INTERNAL));
+      expect(symbols).toEqual(givenGlobalModuleWith(moduleA));
+    });
+
+    it('should mark the not exported symbols as internal', () => {
+
+    });
   });
 
   describe('given a function with multiple prototypes', () => {
@@ -49,11 +44,32 @@ describe('SymbolParser', () => {
 
       });
     });
+
+    describe('when two prototypes are of the same permutation of types', () => {
+      it('should throw error', () => {
+
+      });
+    });
   });
+
   function generateAst(literal: TemplateStringsArray) {
     const program = literal.join('\n');
     const tokenization = tokenize(new StringIterableReader(program));
 
     return parse(new TokenReader(tokenization.tokens), new NullDiagnosticReporter());
+  }
+
+  function givenModuleWith(name: string, ...symbols: ISymbol[]): ModuleSymbol {
+    const module = new ModuleSymbol(SymbolVisibility.INTERNAL, name);
+    symbols.forEach(s => module.define(s.name, s));
+
+    return module;
+  }
+
+  function givenGlobalModuleWith(...symbols: ISymbol[]): ModuleSymbol {
+    const module = new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME);
+    symbols.forEach(s => module.define(s.name, s));
+
+    return module;
   }
 });

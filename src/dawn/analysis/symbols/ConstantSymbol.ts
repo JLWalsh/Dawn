@@ -4,6 +4,6 @@ export class ConstantSymbol implements ISymbol {
 
   constructor(
     public readonly visibility: SymbolVisibility,
-    private readonly name: string,
+    public readonly name: string,
   ) {}
 }

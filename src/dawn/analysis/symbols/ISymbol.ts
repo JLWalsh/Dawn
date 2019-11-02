@@ -6,4 +6,5 @@ export enum SymbolVisibility {
 
 export interface ISymbol {
   visibility: SymbolVisibility;
+  name: string;
 }
