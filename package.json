@@ -26,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "_moduleAliases": {
-    "@dawn": "build/dawn"
+    "@dawn": "build/dawn",
+    "@util": "build/util"
   }
 }

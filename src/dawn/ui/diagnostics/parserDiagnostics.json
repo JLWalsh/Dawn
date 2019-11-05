@@ -189,6 +189,11 @@
       "code": "EXPECTED_COMMA_BETWEEN_EXPRESSIONS",
       "message": "Expected comma between expressions",
       "severity": "error"
+    },
+    {
+      "code": "SYMBOL_ALREADY_DEFINED",
+      "message": "Symbol <%= symbol %> has already been defined previously.",
+      "severity": "error"
     }
   ]
 }

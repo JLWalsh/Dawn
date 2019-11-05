@@ -11,14 +11,18 @@ import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
 import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
 import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
-import {FunctionVisibilityMismatchError} from "@dawn/analysis/errors/FunctionVisibilityMismatchError";
-import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
+import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 
 describe('SymbolParser', () => {
   const symbolParser = new SymbolParser();
+
+  let diagnosticReporter: DiagnosticReporter;
   let expectedModule: ModuleSymbol;
 
-  beforeEach(() => expectedModule = givenGlobalModule());
+  beforeEach(() => {
+    expectedModule = givenGlobalModule()
+    diagnosticReporter = new NullDiagnosticReporter();
+  });
 
   describe('given some exported symbols in module', () => {
     it('should parse exported and internal symbols in module', () => {
@@ -32,7 +36,7 @@ describe('SymbolParser', () => {
         }
       `;
 
-      const symbols = symbolParser.parseAllSymbols(program);
+      const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
       expectModule('A', expectedModule,
         new ValSymbol(SymbolVisibility.EXPORTED, 'x'),
@@ -57,7 +61,7 @@ describe('SymbolParser', () => {
         }
       `;
 
-      const symbols = symbolParser.parseAllSymbols(program);
+      const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
       const functionSymbol = new FunctionSymbol(SymbolVisibility.INTERNAL, 'overloaded');
       functionSymbol.definePrototype([{ valueName: 'a', valueType: 'int' }], null);
@@ -77,7 +81,7 @@ describe('SymbolParser', () => {
         }
       `;
 
-      const symbols = symbolParser.parseAllSymbols(program);
+      const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
       const objectNode = (program.body[0] as ModuleDeclaration).body[0] as ObjectDeclaration;
       const objectSymbol = new ObjectDeclarationSymbol(SymbolVisibility.INTERNAL, 'Bobby', objectNode);
@@ -89,7 +93,7 @@ describe('SymbolParser', () => {
 
   describe('given a function with multiple prototypes', () => {
     describe('and not all prototypes are exported', () => {
-      it('should throw error', () => {
+      it('should report error', () => {
         const program = generateAst`
           module A {
             
@@ -102,24 +106,11 @@ describe('SymbolParser', () => {
             }
           }
         `;
+        diagnosticReporter.report = jest.fn();
 
-        expect(() => symbolParser.parseAllSymbols(program)).toThrow(FunctionVisibilityMismatchError);
-      });
-    });
+        symbolParser.parseAllSymbols(program, diagnosticReporter);
 
-    describe('when two prototypes are of the same permutation of types', () => {
-      it('should throw error', () => {
-        const program = generateAst`
-          aFunction(b: int) {
-          
-          }
-          
-          aFunction(c: int) {
-          
-          }
-        `;
-
-        expect(() => symbolParser.parseAllSymbols(program)).toThrowError(SymbolAlreadyDefinedError);
+        expect(diagnosticReporter.report).toHaveBeenCalledWith("INCONSISTENT_FUNCTION_VISIBILITY");
       });
     });
   });
@@ -128,7 +119,7 @@ describe('SymbolParser', () => {
     const program = literal.join('\n');
     const tokenization = tokenize(new StringIterableReader(program));
 
-    return parse(new TokenReader(tokenization.tokens), new NullDiagnosticReporter());
+    return parse(new TokenReader(tokenization.tokens), diagnosticReporter);
   }
 
   function expectModule(name: string, parent: ModuleSymbol, ...symbols: ISymbol[]) {

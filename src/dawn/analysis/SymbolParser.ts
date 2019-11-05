@@ -1,6 +1,6 @@
 import {Program} from "@dawn/lang/ast/Program";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
-import {DeclarationVisitor} from "@dawn/lang/ast/DeclarationNode";
+import {Declaration, DeclarationVisitor} from "@dawn/lang/ast/DeclarationNode";
 import {Export} from "@dawn/lang/ast/Export";
 import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
 import {Import} from "@dawn/lang/ast/Import";
@@ -12,7 +12,6 @@ import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
 import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
 import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
-import {FunctionVisibilityMismatchError} from "@dawn/analysis/errors/FunctionVisibilityMismatchError";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 
 export class SymbolParser {
@@ -22,7 +21,7 @@ export class SymbolParser {
   parseAllSymbols(program: Program, diagnosticReporter: DiagnosticReporter): ModuleSymbol {
     const visitor = new SymbolParserVisitor(diagnosticReporter);
 
-    program.body.forEach(c => c.acceptDeclarationVisitor(visitor));
+    program.body.forEach(c => visitor.visitDeclaration(c));
 
     return visitor.getGlobalModule();
   }
@@ -37,13 +36,23 @@ class SymbolParserVisitor implements DeclarationVisitor<void> {
     private exportNextSymbol = false,
   ) {}
 
+  public visitDeclaration(declaration: Declaration | Import | Export) {
+    try {
+      declaration.acceptDeclarationVisitor(this);
+    } catch (error) {
+      if (error instanceof SymbolAlreadyDefinedError) {
+        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED", { symbol: error.existingSymbol.name })
+      }
+    }
+  }
+
   getGlobalModule() {
     return this.currentModule;
   }
 
   visitExport(e: Export): void {
     this.exportNextSymbol = true;
-    e.exported.acceptDeclarationVisitor(this);
+    this.visitDeclaration(e.exported);
   }
 
   visitFunctionDeclaration(f: FunctionDeclaration): void {
@@ -52,13 +61,12 @@ class SymbolParserVisitor implements DeclarationVisitor<void> {
 
     if (existingSymbol) {
       if (!(existingSymbol instanceof FunctionSymbol)) {
-        const existingSymbolNode
-        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED", undefined, { subjects: [f, existingSymbol.node] });
+        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED");
         return;
       }
 
       if (existingSymbol.visibility != functionSymbol.visibility) {
-        this.diagnosticReporter.report("INCONSISTENT_FUNCTION_VISIBILITY", undefined, { subjects: [f] });
+        this.diagnosticReporter.report("INCONSISTENT_FUNCTION_VISIBILITY");
       }
 
       this.definePrototype(f, existingSymbol);
@@ -78,7 +86,7 @@ class SymbolParserVisitor implements DeclarationVisitor<void> {
     this.currentModule.define(m.name, module);
     this.currentModule = module;
 
-    m.body.forEach(b => b.acceptDeclarationVisitor(this));
+    m.body.forEach(b => this.visitDeclaration(b));
 
     this.currentModule = module.getParent() as ModuleSymbol;
   }

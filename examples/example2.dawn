@@ -26,6 +26,14 @@ module example {
             val rekt = Rectangle { 10f, 20f }
 
         }
+
+        doSomething(a: submodule.shadowed) {
+
+        }
+
+        doSomething(a: shadowed) {
+
+        }
     }
 
     module sub {
