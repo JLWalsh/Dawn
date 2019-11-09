@@ -148,12 +148,20 @@
       "message": "Expected identifier for accessor",
       "severity": "error"
     },
+    "EXPECTED_MODULE_BODY": {
+      "message": "Expected module body",
+      "severity": "error"
+    },
     "EXPECTED_COMMA_BETWEEN_EXPRESSIONS": {
       "message": "Expected comma between expressions",
       "severity": "error"
     },
     "SYMBOL_ALREADY_DEFINED": {
       "message": "Symbol <%= symbol %> has already been defined previously.",
+      "severity": "error"
+    },
+    "MISSING_OPENING_BRACKET": {
+      "message": "Expected an opening bracket.",
       "severity": "error"
     }
   }

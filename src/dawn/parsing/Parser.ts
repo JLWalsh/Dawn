@@ -33,7 +33,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       try {
         body.push(programContent());
       } catch (error) {
-        handleError(error);
+        handleError(error, [TokenType.OBJECT, TokenType.MODULE, TokenType.VAL, TokenType.IDENTIFIER]);
       }
     }
 
@@ -53,6 +53,9 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return valDeclaration();
     }
 
+    if (reader.peekType(TokenType.BRACKET_CLOSE)) {
+      throw new ParseError("MISSING_OPENING_BRACKET", reader.peekOrPrevious());
+    }
     throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.peekOrPrevious());
   }
 
@@ -105,7 +108,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
           return declaration();
         }
       } catch (error) {
-        handleError(error);
+        handleError(error, [TokenType.BRACKET_CLOSE, TokenType.MODULE, TokenType.VAL, TokenType.OBJECT]);
       }
     });
 
@@ -130,11 +133,8 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function functionDeclaration(): FunctionDeclaration {
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_DECLARATION");
-    reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
 
-    const args = mapWithCommasUntil<FunctionArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
-
-    reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
+    const args = functionArguments();
 
     let returnType = null;
     if (reader.match(TokenType.COLON)) {
@@ -144,6 +144,20 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     const body = functionBody();
 
     return ast.functionDeclaration(name.value, args, returnType, body);
+  }
+
+  function functionArguments(): FunctionArgument[] {
+    try {
+      reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
+      const args = mapWithCommasUntil<FunctionArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
+      reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
+
+      return args;
+    } catch (error) {
+      handleError(error, [TokenType.BRACKET_OPEN, TokenType.MODULE, TokenType.VAL, TokenType.OBJECT]);
+    }
+
+    return [];
   }
 
   function functionArgument(): FunctionArgument {
@@ -156,12 +170,14 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function functionBody(): Statement[]  {
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_FUNCTION_BODY");
-    const body = [];
 
-    while(!reader.peekType(TokenType.BRACKET_CLOSE)) {
-      const stmt = statement();
-      body.push(stmt);
-    }
+    const body = mapUntil<Statement>(TokenType.BRACKET_CLOSE, () => {
+      try {
+        statement();
+      } catch (error) {
+        handleError(error, [TokenType.BRACKET_CLOSE, TokenType.RETURN, TokenType.VAL], false);
+      }
+    });
 
     reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_FUNCTION_BODY");
 
@@ -362,7 +378,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     return ast.accessor(name.value);
   }
 
-  function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T): T[] {
+  function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T | void): T[] {
     let isFirstValue = true;
     return mapUntil<T>(untilToken, () => {
       if (!isFirstValue) {
@@ -376,27 +392,41 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function mapUntil<T>(untilToken: TokenType, map: () => T | void): T[] {
     const values = [];
-    while(!reader.peekType(untilToken)) {
+    while(!reader.peekType(untilToken) && !reader.isAtEnd()) {
       values.push(map());
     }
 
     return values.filter(v => Boolean(v)) as T[];
   }
 
-  function recover() {
+  function recover(tokensAllowedToRecoverTo: TokenType[], accountForMissingOpeningBracket: boolean) {
+    if (reader.peekType(...tokensAllowedToRecoverTo)) {
+      return;
+    }
+
     reader.advance();
 
+    let bracketClosingsToSkip = accountForMissingOpeningBracket ? 1 : 0;
     while(!reader.isAtEnd()) {
-      if (reader.peekType(TokenType.VAL, TokenType.OBJECT, TokenType.MODULE))
+      if (reader.peekType(TokenType.BRACKET_OPEN))
+        bracketClosingsToSkip++;
+
+      if (reader.peekType(TokenType.BRACKET_CLOSE) && bracketClosingsToSkip > 0) {
+        bracketClosingsToSkip--;
+        reader.advance();
+        continue;
+      }
+
+      if (reader.peekType(...tokensAllowedToRecoverTo))
         return;
 
       reader.advance();
     }
   }
 
-  function handleError(error: any) {
+  function handleError(error: any, tokensAllowedToRecoverTo: TokenType[], accountForMissingOpeningBracket: boolean) {
     reportError(error);
-    recover();
+    recover(tokensAllowedToRecoverTo, accountForMissingOpeningBracket);
   }
 
   function reportError(error: any) {

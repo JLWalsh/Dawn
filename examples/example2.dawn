@@ -1,39 +1,16 @@
 module example {
 
-    export object Rectangle {
-        width: float,
-        height: float
-    }
-
     export module submodule {
-        val x = 412i
-        val y = Rectangle { 10i, 30i }
-
-        export object shadowed {
-
+        doSomething(a: submodule.shadowed {
+            object A { }
         }
 
-        export module a {
-            export object a {
-
-            }
-        }
-
-        doSomething() {
-            val rekt = Rectangle { 10f, 20f }
-
-        }
-
-        doSomething(a: submodule.shadowed) {
-            object A {}
-        }
-
-        doSomething(a: shadowed) {
+        doSomething(a: bob, shadowed:mike){
 
         }
     }
 
-    module sub {
+    module sub
 
         doSom() {
             val s = submodule.shadowed {}
