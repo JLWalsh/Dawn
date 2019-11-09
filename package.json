@@ -7,9 +7,11 @@
     "example": "examples"
   },
   "dependencies": {
+    "ejs": "^2.7.1",
     "module-alias": "^2.2.1"
   },
   "devDependencies": {
+    "@types/ejs": "^2.6.3",
     "@types/jest": "^24.0.18",
     "@types/node": "^12.7.9",
     "@types/treeify": "^1.0.0",
@@ -28,7 +30,7 @@
   "author": "",
   "license": "ISC",
   "_moduleAliases": {
-    "@dawn": "build/src/dawn",
-    "@util": "build/src/util"
+    "@dawn": "build/dawn",
+    "@util": "build/util"
   }
 }

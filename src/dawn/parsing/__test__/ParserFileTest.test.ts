@@ -9,21 +9,20 @@ import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {BinaryOperator} from "@dawn/lang/ast/expressions/BinaryExpression";
 import {NativeType} from "@dawn/lang/NativeType";
+import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 
 describe('Parser file test', () => {
 
   const PROGRAM_PATH = './resources/ParserTest.dawn';
 
   let program: string;
-  let diagnosticReporter: DiagnosticReporter;
+  let diagnosticReporter: DiagnosticReporter = new NullDiagnosticReporter();
 
   beforeAll(() => {
     const programPath = path.join(__dirname, PROGRAM_PATH);
     program = fs.readFileSync(programPath, 'utf-8');
-    diagnosticReporter = {
-      reportRaw: jest.fn(),
-      report: jest.fn()
-    };
+    diagnosticReporter.report = jest.fn();
+    diagnosticReporter.reportRaw = jest.fn();
   });
 
   it('should parse the program without any errors', () => {
@@ -150,12 +149,8 @@ describe('Parser file test', () => {
   });
 
   function parseProgram(rawProgram: string) {
-    const tokenization = tokenize(new StringIterableReader(rawProgram));
-    if (tokenization.errors.length > 0) {
-      throw new Error("Syntax errors were found: " + JSON.stringify(tokenization.errors));
-    }
-
-    return parse(new TokenReader(tokenization.tokens), diagnosticReporter);
+    const tokens = tokenize(new StringIterableReader(rawProgram), diagnosticReporter);
+    return parse(new TokenReader(tokens), diagnosticReporter);
   }
 
   function expectProgramEquals(program: Program, expected: Program) {

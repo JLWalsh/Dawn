@@ -1,0 +1,16 @@
+{
+  "templates": {
+    "EXPECTED_TYPE_FOR_NUMBER": {
+      "message": "Expected type for number",
+      "severity": "error"
+    },
+    "INT_MAY_NOT_CONTAIN_DECIMALS": {
+      "message": "Int may not contain decimals",
+      "severity": "error"
+    },
+    "UNRECOGNIZED_CHARACTER": {
+      "message": "Unrecognized character: <%= character %>",
+      "severity": "error"
+    }
+  }
+}

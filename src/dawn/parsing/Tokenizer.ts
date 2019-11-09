@@ -3,15 +3,10 @@ import {Char} from "@dawn/lang/Char";
 import {SupportedNumbers} from "@dawn/lang/Numbers";
 import {keywords} from "@dawn/parsing/Keywords";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
+import {DiagnosticMeta, DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 
-export interface Tokenization {
-  tokens: Token[],
-  errors: string[],
-}
-
-export function tokenize(reader: StringIterableReader): Tokenization {
+export function tokenize(reader: StringIterableReader, diagnosticReporter: DiagnosticReporter): Token[] {
   const tokens: Token[] = [];
-  const errors: string[] = [];
   let recoverFromError = false;
 
   function addSingleToken(type: TokenType) {
@@ -19,8 +14,8 @@ export function tokenize(reader: StringIterableReader): Tokenization {
     tokens.push({ type, lexeme, location });
   }
 
-  function error(name: string) {
-    errors.push(`(${reader.getLine() + 1}, ${reader.getColumn()}) ${name}`);
+  function error(name: string, meta?: DiagnosticMeta) {
+    diagnosticReporter.report(name, { ...meta, location: reader.getLexemeLocation() });
     recoverFromError = true;
   }
 
@@ -100,7 +95,7 @@ export function tokenize(reader: StringIterableReader): Tokenization {
           break;
         }
 
-        error(`Unrecognized character: ${char}`);
+        error('UNRECOGNIZED_CHARACTER', { templating: { character: char } });
       }
     }
   }
@@ -132,7 +127,7 @@ export function tokenize(reader: StringIterableReader): Tokenization {
     }
 
     if (reader.peek() != SupportedNumbers.FLOAT && reader.peek() != SupportedNumbers.INT) {
-      error(`Unspecified number type`);
+      error('EXPECTED_TYPE_FOR_NUMBER');
       return;
     }
 
@@ -140,7 +135,7 @@ export function tokenize(reader: StringIterableReader): Tokenization {
     const tokenType = type === SupportedNumbers.INT ? TokenType.INT_NUMBER : TokenType.FLOAT_NUMBER;
 
     if (tokenType === TokenType.INT_NUMBER && hasDecimals) {
-      error(`Int may not contain decimals`);
+      error('INT_MAY_NOT_CONTAIN_DECIMALS');
       return;
     }
 
@@ -155,5 +150,5 @@ export function tokenize(reader: StringIterableReader): Tokenization {
     }
   }
 
-  return { tokens, errors };
+  return tokens;
 }

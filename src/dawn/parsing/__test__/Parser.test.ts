@@ -7,16 +7,15 @@ import {NativeType} from "@dawn/lang/NativeType";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {Statement} from "@dawn/lang/ast/Statement";
+import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 
 describe('Parser', () => {
 
-  let diagnosticReporter: DiagnosticReporter;
+  let diagnosticReporter: DiagnosticReporter = new NullDiagnosticReporter();
 
   beforeEach(() => {
-    diagnosticReporter = {
-      reportRaw: jest.fn(),
-      report: jest.fn(),
-    };
+    diagnosticReporter.report = jest.fn();
+    diagnosticReporter.reportRaw = jest.fn();
   });
 
   describe('expressions', () => {
@@ -230,7 +229,7 @@ testFunction(one: int, two: float, three: somemodule.AnObject) {
   function parseInFunctionBody(template: TemplateStringsArray) {
     const program = `aFunction() { ${template.join('\n')} }`;
 
-    return parse(new TokenReader(tokenizeProgram(program).tokens), diagnosticReporter);
+    return parse(new TokenReader(tokenizeProgram(program)), diagnosticReporter);
   }
 
   parseInFunctionBody.createExpectedProgram = (statements: Statement) =>
@@ -239,16 +238,11 @@ testFunction(one: int, two: float, three: somemodule.AnObject) {
   function parseProgram(template: TemplateStringsArray) {
     const program = template.join('\n');
 
-    return parse(new TokenReader(tokenizeProgram(program).tokens), diagnosticReporter);
+    return parse(new TokenReader(tokenizeProgram(program)), diagnosticReporter);
   }
 
   function tokenizeProgram(program: string) {
-    const tokens = tokenize(new StringIterableReader(program));
-    if (tokens.errors.length > 0) {
-      throw new Error("Syntax error (s) "+ JSON.stringify(tokens.errors));
-    }
-
-    return tokens;
+    return tokenize(new StringIterableReader(program), diagnosticReporter);
   }
 
 });

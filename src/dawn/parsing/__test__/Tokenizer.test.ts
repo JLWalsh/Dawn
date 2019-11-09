@@ -3,8 +3,16 @@ import {tokenize} from "@dawn/parsing/Tokenizer";
 import {Token, TokenType} from "@dawn/parsing/Token";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import {ProgramLocation} from "@dawn/ui/ProgramLocation";
+import {DiagnosticMeta} from "@dawn/ui/DiagnosticReporter";
+import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 
 describe('Tokenizer', () => {
+  const diagnostics = new NullDiagnosticReporter();
+
+  beforeEach(() => {
+    diagnostics.report = jest.fn();
+    diagnostics.reportRaw = jest.fn();
+  });
 
   describe('given multiple tokens', () => {
     it('should parse multiple tokens', () => {
@@ -82,13 +90,16 @@ describe('Tokenizer', () => {
     });
   });
 
-  it('should return error when parsing an integer with decimals', () => {
-    test('20.20123i', {
-      // TODO add error object instead of printing error location in message
-      errors: [
-        '(1, 9) Int may not contain decimals',
-      ],
-    });
+  it('should report error when parsing an integer with decimals', () => {
+    expectError('20.20123i', 'INT_MAY_NOT_CONTAIN_DECIMALS', { location: { row: 1, column: 1, span: 8 } });
+  });
+
+  it('should report error when parsing number without type suffix', () => {
+    expectError('-90.20123', 'EXPECTED_TYPE_FOR_NUMBER', { location: { row: 1, column: 1, span: 8 } });
+  });
+
+  it('should report error when encountering a non-supported character', () => {
+    expectError('©', 'UNRECOGNIZED_CHARACTER', { location: { row: 1, column: 1, span: 0 }, templating: { character: '©' } });
   });
 
   it('should parse a float', () => {
@@ -387,19 +398,19 @@ describe('Tokenizer', () => {
     return { row: 1, column };
   }
 
-  function test(program: string, expected: { tokens?: Token[], errors?: string[] }) {
-    const { tokens, errors } = tokenize(new StringIterableReader(program));
+  function expectError(program: string, errorCode: string, expectedErrorMeta: DiagnosticMeta) {
+    tokenize(new StringIterableReader(program), diagnostics);
 
-    if (expected.tokens) {
-      expected.tokens.forEach(token => expect(tokens).toContainEqual(token));
-    } else {
-      expect(tokens).toEqual([]);
-    }
+    expect(diagnostics.report).toHaveBeenCalledTimes(1);
+    expect(diagnostics.report).toHaveBeenCalledWith(errorCode, expectedErrorMeta);
+  }
 
-    if(expected.errors) {
-      expected.errors.forEach(error => expect(errors).toContainEqual(error));
-    } else {
-      expect(errors).toEqual([]);
-    }
+  function test(program: string, expected: { tokens: Token[] }) {
+    const tokens = tokenize(new StringIterableReader(program), diagnostics);
+
+    expected.tokens.forEach(token => expect(tokens).toContainEqual(token));
+
+    expect(diagnostics.report).not.toHaveBeenCalled();
+    expect(diagnostics.reportRaw).not.toHaveBeenCalled();
   }
 });

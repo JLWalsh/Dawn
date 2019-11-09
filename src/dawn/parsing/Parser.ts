@@ -23,6 +23,7 @@ import ast from "@dawn/lang/ast/builder/Ast";
 import {tokenTypeToNativeType} from "@dawn/lang/NativeType";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {ParseError} from "@dawn/parsing/ParseError";
+import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
 
 export function parse(reader: TokenReader, reporter: DiagnosticReporter): Program {
 
@@ -394,7 +395,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function reportError(error: any) {
     if (typeof error === 'string') {
-      reporter.reportRaw(error);
+      reporter.reportRaw(error, DiagnosticSeverity.ERROR);
       return;
     }
 
@@ -404,7 +405,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return;
     }
 
-    reporter.reportRaw(JSON.stringify(error.message));
+    reporter.reportRaw(JSON.stringify(error.message), DiagnosticSeverity.ERROR);
   }
 
   return program();
