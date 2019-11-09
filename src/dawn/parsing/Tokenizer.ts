@@ -76,7 +76,7 @@ export function tokenize(reader: StringIterableReader, diagnosticReporter: Diagn
         }
       } break;
       case '-': {
-        if (Char.isNumber(reader.peek())) {
+        if (reader.safePeek(Char.isNumber)) {
           parseNumber();
           break;
         }
@@ -101,7 +101,7 @@ export function tokenize(reader: StringIterableReader, diagnosticReporter: Diagn
   }
 
   function parseIdentifier() {
-    while(!reader.isAtEnd() && Char.isAlpha(reader.peek())) {
+    while(reader.safePeek(Char.isAlpha)) {
       reader.advance();
     }
 
@@ -114,13 +114,13 @@ export function tokenize(reader: StringIterableReader, diagnosticReporter: Diagn
   }
 
   function parseNumber() {
-    while(!reader.isAtEnd() && Char.isNumber(reader.peek())) {
+    while(reader.safePeek(Char.isNumber)) {
       reader.advance();
     }
 
     let hasDecimals = false;
     if (reader.match('.')) {
-      while(!reader.isAtEnd() && Char.isNumber(reader.peek())) {
+      while(reader.safePeek(Char.isNumber)) {
         hasDecimals = true;
         reader.advance();
       }

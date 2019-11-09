@@ -1,3 +1,4 @@
+import {TokenType} from "@dawn/parsing/Token";
 
 interface ArrayLike<T> {
   [key: number]: T;
@@ -15,15 +16,7 @@ export class IterableReader<T> {
     return this.content[this.position++];
   }
 
-  advanceOrThrow(errorMessage: string): T {
-    if (this.isAtEnd()) {
-      throw new Error(errorMessage);
-    }
-
-    return this.advance();
-  }
-
-  peek(): T {
+  peek(): T | void {
     return this.content[this.position];
   }
 

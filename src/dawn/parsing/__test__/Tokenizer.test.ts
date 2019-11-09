@@ -22,36 +22,36 @@ describe('Tokenizer', () => {
            type: TokenType.IMPORT,
            value: 'import',
            lexeme: 'import',
-           location: locationAtColumn(1),
+           location: locationAtColumn(1, 5),
          },
          {
            type: TokenType.IDENTIFIER,
            value: 'helloworld',
            lexeme: 'helloworld',
-           location: locationAtColumn(8),
+           location: locationAtColumn(8, 9),
          },
          {
            type: TokenType.INT_NUMBER,
            value: 20,
            lexeme: '20i',
-           location: locationAtColumn(19),
+           location: locationAtColumn(19, 2),
          },
          {
            type: TokenType.FLOAT_NUMBER,
            value: -40.123,
            lexeme: '-40.123f',
-           location: locationAtColumn(22),
+           location: locationAtColumn(22, 7),
          },
          {
            type: TokenType.OBJECT,
            value: 'object',
            lexeme: 'object',
-           location: locationAtColumn(31),
+           location: locationAtColumn(31, 5),
          },
          {
            type: TokenType.BANG_EQUALS,
            lexeme: '!=',
-           location: locationAtColumn(38),
+           location: locationAtColumn(38, 1),
          },
          {
            type: TokenType.HYPHEN,
@@ -74,7 +74,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 20,
         lexeme: '20i',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 2),
       }],
     });
   });
@@ -85,7 +85,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: -42,
         lexeme: '-42i',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 3),
       }],
     });
   });
@@ -108,7 +108,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: 20.12354,
         lexeme: '20.12354f',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 8),
       }],
     });
   });
@@ -119,7 +119,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: 20,
         lexeme: '20f',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 2),
       }],
     });
   });
@@ -130,7 +130,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: -42.42,
         lexeme: '-42.42f',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 6),
       }],
     });
   });
@@ -141,7 +141,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
-        location: { column: 1, row: 2 },
+        location: { column: 1, row: 2, span: 2 },
       }],
     });
   });
@@ -152,7 +152,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
-        location: locationAtColumn(2),
+        location: locationAtColumn(2, 2),
       }],
     });
   });
@@ -163,7 +163,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
-        location: locationAtColumn(2),
+        location: locationAtColumn(2, 2),
       }],
     });
   });
@@ -274,7 +274,7 @@ describe('Tokenizer', () => {
         type: TokenType.IMPORT,
         lexeme: 'import',
         value: 'import',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -285,7 +285,7 @@ describe('Tokenizer', () => {
         type: TokenType.MODULE,
         lexeme: 'module',
         value: 'module',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -296,7 +296,7 @@ describe('Tokenizer', () => {
         type: TokenType.EXPORT,
         lexeme: 'export',
         value: 'export',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -307,7 +307,7 @@ describe('Tokenizer', () => {
         type: TokenType.OBJECT,
         lexeme: 'object',
         value: 'object',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -318,7 +318,7 @@ describe('Tokenizer', () => {
         type: TokenType.VAL,
         lexeme: 'val',
         value: 'val',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 2),
       }],
     });
   });
@@ -329,7 +329,7 @@ describe('Tokenizer', () => {
         type: TokenType.RETURN,
         lexeme: 'return',
         value: 'return',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -339,7 +339,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.GREATER_OR_EQUAL,
         lexeme: '>=',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
@@ -359,7 +359,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.LESS_OR_EQUAL,
         lexeme: '<=',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
@@ -379,7 +379,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.EQUALS_EQUALS,
         lexeme: '==',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
@@ -389,13 +389,13 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.BANG_EQUALS,
         lexeme: '!=',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
 
-  function locationAtColumn(column: number): ProgramLocation {
-    return { row: 1, column };
+  function locationAtColumn(column: number, span: number = 0): ProgramLocation {
+    return { row: 1, column, span };
   }
 
   function expectError(program: string, errorCode: string, expectedErrorMeta: DiagnosticMeta) {

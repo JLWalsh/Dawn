@@ -15,10 +15,19 @@ export class TokenReader extends IterableReader<Token> {
     return this.content[this.getPosition() + offset];
   }
 
+  peekType(...tokenTypes: TokenType[]) {
+    const peekedValue = this.peek();
+    if (!peekedValue) {
+      return false;
+    }
+
+    return tokenTypes.findIndex(t => t === peekedValue.type) !== -1;
+  }
+
   consume(tokenType: TokenType, diagnosticCode: string, diagnosticTemplateValues?: DiagnosticTemplateValues): Token {
     const token = this.match(tokenType);
     if(!token) {
-      throw new ParseError(diagnosticCode, this.peekOrPrevious().location, diagnosticTemplateValues || {});
+      throw new ParseError(diagnosticCode, this.peekOrPrevious(), diagnosticTemplateValues || {});
     }
 
     return this.previous();
@@ -33,7 +42,7 @@ export class TokenReader extends IterableReader<Token> {
       return false;
     }
 
-    const matchingToken = anyOf.find(t => this.peek().type === t);
+    const matchingToken = anyOf.find(t => this.peekType(t));
     if (matchingToken === undefined) {
       return false;
     }
@@ -41,8 +50,8 @@ export class TokenReader extends IterableReader<Token> {
     this.advance();
     return true;
   }
-  
-  private peekOrPrevious(): Token {
+
+  peekOrPrevious(): Token {
     return this.peekAt(0) || this.peekAt(-1);
   }
 }

@@ -18,6 +18,15 @@ export class StringIterableReader extends IterableReader<string> {
     this.nextExtractLocation = this.getLocation();
   }
 
+  safePeek(predicate: (char: string) => boolean) {
+    const peekedValue = this.peek();
+    if (!peekedValue) {
+      return false;
+    }
+
+    return predicate(peekedValue);
+  }
+
   advance(): string {
     this.column++;
 
@@ -31,9 +40,8 @@ export class StringIterableReader extends IterableReader<string> {
 
   extract(): { lexeme: string, location: ProgramLocation } {
     const value = (this.content as string).substring(this.nextExtractStart, this.getPosition());
-    const location = { row: this.lineNumber + 1, column: this.column - value.length + 1 }; // Rows and columns are not 0-indexed
 
-    return { lexeme: value, location };
+    return { lexeme: value, location: this.getLexemeLocation() };
   }
 
 
