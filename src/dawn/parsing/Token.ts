@@ -1,3 +1,4 @@
+import {ProgramLocation} from "@dawn/ui/ProgramLocation";
 
 export enum TokenType {
   IMPORT,
@@ -43,4 +44,5 @@ export interface Token {
   type: TokenType;
   value?: any;
   lexeme: string;
+  location: ProgramLocation;
 }

@@ -28,7 +28,7 @@ valdecl         -> "val" IDENTIFIER "=" expr
 
 funcdecl        -> IDENTIFIER "(" (fundeclcarg ","?)* ")" (":" IDENTIFIER)? funcdeclbody
 
-funcdeclarg     -> IDENTIFIER ":" IDENTIFIER
+funcdeclarg     -> IDENTIFIER ":" Accessor
 
 funcdeclbody    -> "{" statement* "}"
 

@@ -12,7 +12,9 @@
   "devDependencies": {
     "@types/jest": "^24.0.18",
     "@types/node": "^12.7.9",
+    "@types/treeify": "^1.0.0",
     "jest": "^24.9.0",
+    "treeify": "^1.1.0",
     "ts-jest": "^24.1.0",
     "ts-node": "^8.4.1",
     "typescript": "^3.6.3"
@@ -26,6 +28,7 @@
   "author": "",
   "license": "ISC",
   "_moduleAliases": {
-    "@dawn": "build/dawn"
+    "@dawn": "build/src/dawn",
+    "@util": "build/src/util"
   }
 }

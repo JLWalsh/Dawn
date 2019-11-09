@@ -4,14 +4,19 @@ import {SupportedNumbers} from "@dawn/lang/Numbers";
 import {keywords} from "@dawn/parsing/Keywords";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 
-export function tokenize(reader: StringIterableReader): { tokens: Token[], errors: string[] } {
+export interface Tokenization {
+  tokens: Token[],
+  errors: string[],
+}
+
+export function tokenize(reader: StringIterableReader): Tokenization {
   const tokens: Token[] = [];
   const errors: string[] = [];
   let recoverFromError = false;
 
   function addSingleToken(type: TokenType) {
-    const lexeme = reader.extract() as string;
-    tokens.push({ type, lexeme });
+    const { lexeme, location }  = reader.extract();
+    tokens.push({ type, lexeme, location });
   }
 
   function error(name: string) {
@@ -105,12 +110,12 @@ export function tokenize(reader: StringIterableReader): { tokens: Token[], error
       reader.advance();
     }
 
-    const lexeme = reader.extract() as string;
+    const { lexeme, location } = reader.extract();
     // TODO use null coalescing when Typescript 3.7 is released
     const keyword = keywords[lexeme];
     const type = keyword === undefined ? TokenType.IDENTIFIER : keyword;
 
-    tokens.push({ type, lexeme, value: lexeme });
+    tokens.push({ type, lexeme, value: lexeme, location: location });
   }
 
   function parseNumber() {
@@ -139,9 +144,9 @@ export function tokenize(reader: StringIterableReader): { tokens: Token[], error
       return;
     }
 
-    const lexeme = reader.extract() as string;
+    const { lexeme, location } = reader.extract();
     const value = Number(lexeme.substr(0, lexeme.length - 1));
-    tokens.push({ type: tokenType, lexeme, value });
+    tokens.push({ type: tokenType, lexeme, value, location });
   }
 
   function recover() {

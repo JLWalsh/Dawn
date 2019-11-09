@@ -6,6 +6,7 @@ module.exports = {
         "^.+\\.tsx?$": "ts-jest"
     },
     "moduleNameMapper": {
-        "^@dawn/(.*)$": "<rootDir>/src/dawn/$1"
+        "^@dawn/(.*)$": "<rootDir>/src/dawn/$1",
+        "^@util/(.*)$": "<rootDir>/src/util/$1"
     }
 };

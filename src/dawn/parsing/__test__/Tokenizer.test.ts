@@ -2,49 +2,58 @@ import 'module-alias/register';
 import {tokenize} from "@dawn/parsing/Tokenizer";
 import {Token, TokenType} from "@dawn/parsing/Token";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
+import {ProgramLocation} from "@dawn/ui/ProgramLocation";
 
 describe('Tokenizer', () => {
 
   describe('given multiple tokens', () => {
     it('should parse multiple tokens', () => {
-      test('import helloworld \n 20i-40.123f object != - *', {
+      test('import helloworld 20i-40.123f object != - *', {
        tokens: [
          {
            type: TokenType.IMPORT,
            value: 'import',
            lexeme: 'import',
+           location: locationAtColumn(1),
          },
          {
            type: TokenType.IDENTIFIER,
            value: 'helloworld',
            lexeme: 'helloworld',
+           location: locationAtColumn(8),
          },
          {
            type: TokenType.INT_NUMBER,
            value: 20,
            lexeme: '20i',
+           location: locationAtColumn(19),
          },
          {
            type: TokenType.FLOAT_NUMBER,
            value: -40.123,
            lexeme: '-40.123f',
+           location: locationAtColumn(22),
          },
          {
            type: TokenType.OBJECT,
            value: 'object',
            lexeme: 'object',
+           location: locationAtColumn(31),
          },
          {
            type: TokenType.BANG_EQUALS,
            lexeme: '!=',
+           location: locationAtColumn(38),
          },
          {
            type: TokenType.HYPHEN,
            lexeme: '-',
+           location: locationAtColumn(41),
          },
          {
            type: TokenType.STAR,
            lexeme: '*',
+           location: locationAtColumn(43),
          },
        ]
       });
@@ -57,6 +66,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 20,
         lexeme: '20i',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -67,6 +77,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: -42,
         lexeme: '-42i',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -86,6 +97,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: 20.12354,
         lexeme: '20.12354f',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -96,6 +108,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: 20,
         lexeme: '20f',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -106,16 +119,18 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: -42.42,
         lexeme: '-42.42f',
+        location: locationAtColumn(1),
       }],
     });
   });
 
-  it('should skip newlines', () => {
+  it('should change row when encountering newline', () => {
     test('\n10i\n', {
       tokens: [{
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
+        location: { column: 1, row: 2 },
       }],
     });
   });
@@ -126,6 +141,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
+        location: locationAtColumn(2),
       }],
     });
   });
@@ -136,6 +152,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
+        location: locationAtColumn(2),
       }],
     });
   });
@@ -145,6 +162,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.PAREN_OPEN,
         lexeme: '(',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -154,6 +172,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.PAREN_CLOSE,
         lexeme: ')',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -163,6 +182,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.BRACKET_OPEN,
         lexeme: '{',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -172,6 +192,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.BRACKET_CLOSE,
         lexeme: '}',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -181,6 +202,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.DOT,
         lexeme: '.',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -190,6 +212,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.COLON,
         lexeme: ':',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -199,6 +222,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.HYPHEN,
         lexeme: '-',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -208,6 +232,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.STAR,
         lexeme: '*',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -217,6 +242,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.EQUALS,
         lexeme: '=',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -226,6 +252,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.COMMA,
         lexeme: ',',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -236,6 +263,7 @@ describe('Tokenizer', () => {
         type: TokenType.IMPORT,
         lexeme: 'import',
         value: 'import',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -246,6 +274,7 @@ describe('Tokenizer', () => {
         type: TokenType.MODULE,
         lexeme: 'module',
         value: 'module',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -256,6 +285,7 @@ describe('Tokenizer', () => {
         type: TokenType.EXPORT,
         lexeme: 'export',
         value: 'export',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -266,6 +296,7 @@ describe('Tokenizer', () => {
         type: TokenType.OBJECT,
         lexeme: 'object',
         value: 'object',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -276,6 +307,7 @@ describe('Tokenizer', () => {
         type: TokenType.VAL,
         lexeme: 'val',
         value: 'val',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -286,6 +318,7 @@ describe('Tokenizer', () => {
         type: TokenType.RETURN,
         lexeme: 'return',
         value: 'return',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -295,6 +328,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.GREATER_OR_EQUAL,
         lexeme: '>=',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -304,6 +338,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.GREATER_THAN,
         lexeme: '>',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -313,6 +348,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.LESS_OR_EQUAL,
         lexeme: '<=',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -322,6 +358,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.LESS_THAN,
         lexeme: '<',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -331,6 +368,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.EQUALS_EQUALS,
         lexeme: '==',
+        location: locationAtColumn(1),
       }],
     });
   });
@@ -340,9 +378,14 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.BANG_EQUALS,
         lexeme: '!=',
+        location: locationAtColumn(1),
       }],
     });
   });
+
+  function locationAtColumn(column: number): ProgramLocation {
+    return { row: 1, column };
+  }
 
   function test(program: string, expected: { tokens?: Token[], errors?: string[] }) {
     const { tokens, errors } = tokenize(new StringIterableReader(program));

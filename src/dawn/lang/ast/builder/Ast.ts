@@ -2,7 +2,7 @@ import {Program, ProgramContent} from "@dawn/lang/ast/Program";
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {Export} from "@dawn/lang/ast/Export";
-import {DeclarationNode, DeclarationVisitor} from "@dawn/lang/ast/DeclarationNode";
+import {DeclarationNode, DeclarationVisitor, NamedDeclaration} from "@dawn/lang/ast/DeclarationNode";
 import {Import} from "@dawn/lang/ast/Import";
 import {Instantiation, KeyValue} from "@dawn/lang/ast/Instantiation";
 import {Expression, ExpressionVisitor} from "@dawn/lang/ast/Expression";
@@ -10,7 +10,7 @@ import {Invocation} from "@dawn/lang/ast/Invocation";
 import {Return} from "@dawn/lang/ast/Return";
 import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
 import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
-import {FunctionDeclarationArgument} from "@dawn/lang/ast/declarations/FunctionDeclarationArgument";
+import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
 import {Statement, StatementVisitor} from "@dawn/lang/ast/Statement";
 import {ModuleContent, ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/ObjectDeclaration";
@@ -32,7 +32,7 @@ class AstNodeBuilder {
     return { type: AstNodeType.ACCESSOR, name, subAccessor };
   }
 
-  export(exported: DeclarationNode): Export {
+  export(exported: NamedDeclaration): Export {
     return { type: AstNodeType.EXPORT, exported,
       acceptDeclarationVisitor<T>(visitor: DeclarationVisitor<T>): T {
         return visitor.visitExport(this);
@@ -52,6 +52,9 @@ class AstNodeBuilder {
     return { type: AstNodeType.INSTANTIATION, objectType, values,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitInstantiation(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }
@@ -72,11 +75,14 @@ class AstNodeBuilder {
     return { type: AstNodeType.VALACCESSOR, value, invocation,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitValAccessor(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }
 
-  functionDeclaration(name: string, args: FunctionDeclarationArgument[], returnType: string | null, body: Statement[]): FunctionDeclaration {
+  functionDeclaration(name: string, args: FunctionArgument[], returnType: Accessor | null, body: Statement[]): FunctionDeclaration {
     return { type: AstNodeType.FUNCTION_DECLARATION, name, args, returnType, body,
       acceptDeclarationVisitor<T>(visitor: DeclarationVisitor<T>): T {
         return visitor.visitFunctionDeclaration(this);
@@ -84,7 +90,7 @@ class AstNodeBuilder {
     };
   }
 
-  functionDeclarationArgument(valueName: string, valueType: string): FunctionDeclarationArgument {
+  functionDeclarationArgument(valueName: string, valueType: Accessor): FunctionArgument {
     return { valueName, valueType };
   }
 
@@ -119,6 +125,9 @@ class AstNodeBuilder {
     return { type: AstNodeType.LITERAL, value, valueType,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitLiteral(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }
@@ -127,6 +136,9 @@ class AstNodeBuilder {
     return { type: AstNodeType.EQUALITY, left, operator, right,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitEquality(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }
@@ -135,6 +147,9 @@ class AstNodeBuilder {
     return { type: AstNodeType.COMPARISON, left, operator, right,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitComparison(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }
@@ -143,6 +158,9 @@ class AstNodeBuilder {
     return { type: AstNodeType.BINARY, left, operator, right,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitBinary(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }
@@ -151,6 +169,9 @@ class AstNodeBuilder {
     return { type: AstNodeType.UNARY, operator, right,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitUnary(this);
+      },
+      acceptStatementVisitor<T>(visitor: StatementVisitor<T>): T {
+        return visitor.visitExpressionStatement(this);
       }
     };
   }

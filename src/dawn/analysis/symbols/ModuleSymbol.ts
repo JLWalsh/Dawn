@@ -1,14 +1,53 @@
-import {ConstantSymbol} from "@dawn/analysis/symbols/ConstantSymbol";
+import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
 
-export class ModuleSymbol extends ConstantSymbol {
+export class ModuleSymbol implements ISymbol {
 
   constructor(
-    private readonly exportedSymbols: ConstantSymbol[],
-    private readonly internalSymbols: ConstantSymbol[],
-    name: string,
-    containedIn: ConstantSymbol | void = undefined,
-  ) {
-    super(name, containedIn);
+    public readonly visibility: SymbolVisibility,
+    public readonly name: string,
+    private readonly parentModule: ModuleSymbol | void = undefined,
+    private readonly symbols: Map<string, ISymbol> = new Map(),
+) {
+    this.visibility = visibility;
   }
 
+  define(symbolName: string, symbol: ISymbol) {
+    const existingSymbol = this.symbols.get(symbolName);
+    if (existingSymbol) {
+      throw new SymbolAlreadyDefinedError(existingSymbol, symbol);
+    }
+
+    this.symbols.set(symbolName, symbol);
+  }
+
+  upwardsLookup(symbolName: string): ISymbol | void {
+    const symbol = this.symbols.get(symbolName);
+    if (symbol) {
+      return symbol;
+    }
+
+    if (this.parentModule) {
+      return this.parentModule.upwardsLookup(symbolName);
+    }
+  }
+
+  downwardsLookup(symbolName: string): ISymbol | void {
+    const symbol = this.symbols.get(symbolName);
+    if (symbol && symbol.visibility === SymbolVisibility.EXPORTED) {
+      return symbol;
+    }
+  }
+
+  get(symbolName: string): ISymbol | void {
+    return this.symbols.get(symbolName);
+  }
+
+  getParent() {
+    return this.parentModule;
+  }
+
+  getSymbols() {
+    return this.symbols;
+  }
 }

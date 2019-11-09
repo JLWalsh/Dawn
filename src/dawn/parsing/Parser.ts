@@ -9,7 +9,7 @@ import {findComparisonOperator} from "@dawn/lang/ast/expressions/ComparisonExpre
 import {findEqualityOperator} from "@dawn/lang/ast/expressions/EqualityExpression";
 import {Statement} from "@dawn/lang/ast/Statement";
 import {Return} from "@dawn/lang/ast/Return";
-import {FunctionDeclarationArgument} from "@dawn/lang/ast/declarations/FunctionDeclarationArgument";
+import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
 import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
 import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {Instantiation, KeyValue} from "@dawn/lang/ast/Instantiation";
@@ -49,9 +49,11 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return importStatement();
     } else if (reader.peek().type === TokenType.IDENTIFIER) {
       return functionDeclaration();
+    } else if (reader.peek().type === TokenType.VAL) {
+      return valDeclaration();
     }
 
-    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT");
+    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.previous() && reader.previous().location);
   }
 
   function declaration(): Declaration {
@@ -66,7 +68,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
         return functionDeclaration();
     }
 
-    throw new ParseError("EXPECTED_DECLARATION");
+    throw new ParseError("EXPECTED_DECLARATION", reader.previous().location);
   }
 
   function objectDeclaration(): ObjectDeclaration {
@@ -125,14 +127,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_DECLARATION");
     reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
 
-    const args = mapWithCommasUntil<FunctionDeclarationArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
+    const args = mapWithCommasUntil<FunctionArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
 
     reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
 
     let returnType = null;
     if (reader.match(TokenType.COLON)) {
-      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_RETURN_TYPE");
-      returnType = returnTypeToken.value;
+      returnType = accessor();
     }
 
     const body = functionBody();
@@ -140,12 +141,12 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     return ast.functionDeclaration(name.value, args, returnType, body);
   }
 
-  function functionArgument(): FunctionDeclarationArgument {
+  function functionArgument(): FunctionArgument {
     const variableName = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_NAME");
     reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_ARGUMENT_NAME");
-    const variableType = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_TYPE");
+    const variableType = accessor();
 
-    return ast.functionDeclarationArgument(variableName.value, variableType.value);
+    return ast.functionDeclarationArgument(variableName.value, variableType);
   }
 
   function functionBody(): Statement[]  {
@@ -397,12 +398,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return;
     }
 
+    // TODO investigate this clause not being entered when given a ParseError
     if (error instanceof ParseError) {
-      reporter.report(error.diagnosticCode, error.diagnosticTemplateValues);
+      reporter.report(error.diagnosticCode, { templating: error.diagnosticTemplateValues, location: error.location });
       return;
     }
 
-    reporter.reportRaw(JSON.stringify(error));
+    reporter.reportRaw(JSON.stringify(error.message));
   }
 
   return program();

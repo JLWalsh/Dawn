@@ -1,0 +1,53 @@
+
+module example {
+
+    export object Rectangle {
+        width: float,
+        height: float
+    }
+
+    export module submodule {
+        val x = 4i
+        val y = Rectangle { 10i, 30i }
+
+        export object shadowed {
+
+        }
+
+        export module a {
+            export object a {
+
+            }
+        }
+
+        doSomething() {
+            val rekt = Rectangle { 10f, 20f }
+
+        }
+
+        doSomething(a: submodule.shadowed) {
+
+        }
+
+        doSomething(a: shadowed) {
+
+        }
+    }
+
+    module sub {
+
+        doSom() {
+            val s = submodule.shadowed {}
+        }
+    }
+
+    fromInside() {
+        val x = submodule.a.a { width: 10f, height: 20f }
+    }
+}
+
+bob() {
+    val rectangle = example.Rectangle { 10f, 20f }
+
+    val a = example.submodule.a.a {  }
+}

@@ -1,18 +1,23 @@
-import {ConstantSymbol} from "@dawn/analysis/symbols/ConstantSymbol";
+import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
+import {Accessor} from "@dawn/lang/ast/Accessor";
 
 export interface FunctionSymbolPrototype {
-  args: ConstantSymbol[];
+  returnType: Accessor | null;
+  args: FunctionArgument[];
 }
 
-export class FunctionSymbol extends ConstantSymbol {
+export class FunctionSymbol implements ISymbol {
+
+  private readonly prototypes: FunctionSymbolPrototype[] = [];
 
   constructor(
-    private readonly returnType: ConstantSymbol,
-    private readonly implementations: FunctionSymbolPrototype[],
-    name: string,
-    containedIn: ConstantSymbol | void = undefined,
-  ) {
-    super(name, containedIn);
+    public readonly visibility: SymbolVisibility,
+    public readonly name: string,
+  ) {}
+
+  definePrototype(args: FunctionArgument[], returnType: Accessor | null) {
+    this.prototypes.push({ args, returnType });
   }
 
 }
