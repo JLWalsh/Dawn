@@ -51,7 +51,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return functionDeclaration();
     }
 
-    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT");
+    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.previous().location);
   }
 
   function declaration(): Declaration {
@@ -66,7 +66,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
         return functionDeclaration();
     }
 
-    throw new ParseError("EXPECTED_DECLARATION");
+    throw new ParseError("EXPECTED_DECLARATION", reader.previous().location);
   }
 
   function objectDeclaration(): ObjectDeclaration {
@@ -131,8 +131,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
     let returnType = null;
     if (reader.match(TokenType.COLON)) {
-      const returnTypeToken = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_RETURN_TYPE");
-      returnType = returnTypeToken.value;
+      returnType = accessor();
     }
 
     const body = functionBody();
@@ -143,9 +142,9 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   function functionArgument(): FunctionArgument {
     const variableName = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_NAME");
     reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_ARGUMENT_NAME");
-    const variableType = reader.consume(TokenType.IDENTIFIER, "EXPECTED_ARGUMENT_TYPE");
+    const variableType = accessor();
 
-    return ast.functionDeclarationArgument(variableName.value, variableType.value);
+    return ast.functionDeclarationArgument(variableName.value, variableType);
   }
 
   function functionBody(): Statement[]  {
@@ -398,7 +397,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     }
 
     if (error instanceof ParseError) {
-      reporter.report(error.diagnosticCode, error.diagnosticTemplateValues);
+      reporter.report(error.diagnosticCode, { templating: error.diagnosticTemplateValues, location: error.location });
       return;
     }
 

@@ -41,7 +41,7 @@ class SymbolParserVisitor implements DeclarationVisitor<void> {
       declaration.acceptDeclarationVisitor(this);
     } catch (error) {
       if (error instanceof SymbolAlreadyDefinedError) {
-        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED", { symbol: error.existingSymbol.name })
+        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED", { templating: { symbol: error.existingSymbol.name } });
       }
     }
   }

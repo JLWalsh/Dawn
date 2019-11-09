@@ -46,4 +46,8 @@ export class ModuleSymbol implements ISymbol {
   getParent() {
     return this.parentModule;
   }
+
+  getSymbols() {
+    return this.symbols;
+  }
 }

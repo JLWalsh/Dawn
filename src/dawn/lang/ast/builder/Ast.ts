@@ -82,7 +82,7 @@ class AstNodeBuilder {
     };
   }
 
-  functionDeclaration(name: string, args: FunctionArgument[], returnType: string | null, body: Statement[]): FunctionDeclaration {
+  functionDeclaration(name: string, args: FunctionArgument[], returnType: Accessor | null, body: Statement[]): FunctionDeclaration {
     return { type: AstNodeType.FUNCTION_DECLARATION, name, args, returnType, body,
       acceptDeclarationVisitor<T>(visitor: DeclarationVisitor<T>): T {
         return visitor.visitFunctionDeclaration(this);
@@ -90,7 +90,7 @@ class AstNodeBuilder {
     };
   }
 
-  functionDeclarationArgument(valueName: string, valueType: string): FunctionArgument {
+  functionDeclarationArgument(valueName: string, valueType: Accessor): FunctionArgument {
     return { valueName, valueType };
   }
 

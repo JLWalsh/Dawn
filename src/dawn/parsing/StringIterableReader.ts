@@ -1,4 +1,5 @@
 import {IterableReader} from "@dawn/parsing/IterableReader";
+import {ProgramLocation} from "@dawn/ui/ProgramLocation";
 
 export class StringIterableReader extends IterableReader<string> {
 
@@ -22,8 +23,11 @@ export class StringIterableReader extends IterableReader<string> {
     return token;
   }
 
-  extract(): ArrayLike<string> {
-    return (this.content as string).substring(this.nextExtractStart, this.getPosition());
+  extract(): { lexeme: string, location: ProgramLocation } {
+    const value = (this.content as string).substring(this.nextExtractStart, this.getPosition());
+    const location = { row: this.lineNumber + 1, column: this.column - value.length + 1 }; // Rows and columns are not 0-indexed
+
+    return { lexeme: value, location };
   }
 
 

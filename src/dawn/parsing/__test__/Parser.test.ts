@@ -180,7 +180,7 @@ testFunction(one: int): float {
     `;
 
       const expected =
-        ast.functionDeclaration('testFunction', [{ valueName: 'one', valueType: 'int' }], 'float', [
+        ast.functionDeclaration('testFunction', [{ valueName: 'one', valueType: ast.accessor('int') }], ast.accessor('float'), [
           ast.return(
             ast.literal(
               10,
@@ -194,14 +194,17 @@ testFunction(one: int): float {
 
     it('should parse function with multiple arguments', () => {
       const program = parseProgram`
-testFunction(one: int, two: float, three: int) {
+testFunction(one: int, two: float, three: somemodule.AnObject) {
   return 10i
 }
     `;
 
       const expected =
         ast.functionDeclaration('testFunction',
-          [{ valueName: 'one', valueType: 'int' }, { valueName: 'two', valueType: 'float'}, { valueName: 'three', valueType: 'int' }], null, [
+          [
+            { valueName: 'one', valueType: ast.accessor('int') },
+            { valueName: 'two', valueType: ast.accessor('float') },
+            { valueName: 'three', valueType: ast.accessor('somemodule', ast.accessor('AnObject')) }], null, [
           ast.return(
             ast.literal(
               10,

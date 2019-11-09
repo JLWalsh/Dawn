@@ -2,12 +2,12 @@
 module example {
 
     object Rectangle {
-        width: float
+        width: float,
         height: float
     }
 
     module submodule {
-        val x = 4.1416i
+        val x = 4i
         val y = Rectangle { 10i, 30i }
 
         export object shadowed {
@@ -21,8 +21,6 @@ module example {
         }
 
         doSomething() {
-            # Simple recursive lookup, where we lookup at the current symbol table, and look in upper scopes
-            # This is called an upward lookup, as we look at scopes above us for the symbol
             val rekt = Rectangle { 10f, 20f }
 
         }
@@ -48,17 +46,9 @@ module example {
     }
 }
 
-# Lookup example
-# Lookup Rectangle in example
-# This is call a downward lookup, as we look at scopes beneath us for the symbol
-val rectangle = example.Rectangle { 10f, 20f }
+bob() {
+    val rectangle = example.Rectangle { 10f, 20f }
 
-val a = example.submodule.a.a {}
-val c = example.submodule.a.shadowed {}
-# Globals
-# module example
-#   object Rectangle
-#       float width
-#       float height
-#   function fromInside -> void
-#
+    val a = example.submodule.a.a {}
+    val c = example.submodule.a.shadowed {}
+}

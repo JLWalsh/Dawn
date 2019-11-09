@@ -1,8 +1,9 @@
 import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
+import {Accessor} from "@dawn/lang/ast/Accessor";
 
 export interface FunctionSymbolPrototype {
-  returnType: string | null;
+  returnType: Accessor | null;
   args: FunctionArgument[];
 }
 
@@ -15,7 +16,7 @@ export class FunctionSymbol implements ISymbol {
     public readonly name: string,
   ) {}
 
-  definePrototype(args: FunctionArgument[], returnType: string | null) {
+  definePrototype(args: FunctionArgument[], returnType: Accessor | null) {
     this.prototypes.push({ args, returnType });
   }
 

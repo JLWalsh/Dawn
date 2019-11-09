@@ -1,8 +1,8 @@
 import {AstNode} from "@dawn/lang/ast/AstNode";
 
 export enum SymbolVisibility {
-  EXPORTED,
-  INTERNAL
+  EXPORTED = "exported",
+  INTERNAL = "internal"
 }
 
 export interface ISymbol {

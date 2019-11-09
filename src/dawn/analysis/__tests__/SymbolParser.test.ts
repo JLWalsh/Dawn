@@ -12,6 +12,7 @@ import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationS
 import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
+import ast from "@dawn/lang/ast/builder/Ast";
 
 describe('SymbolParser', () => {
   const symbolParser = new SymbolParser();
@@ -64,8 +65,8 @@ describe('SymbolParser', () => {
       const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
       const functionSymbol = new FunctionSymbol(SymbolVisibility.INTERNAL, 'overloaded');
-      functionSymbol.definePrototype([{ valueName: 'a', valueType: 'int' }], null);
-      functionSymbol.definePrototype([{ valueName: 'a', valueType: 'string' }], null);
+      functionSymbol.definePrototype([{ valueName: 'a', valueType: ast.accessor('int') }], null);
+      functionSymbol.definePrototype([{ valueName: 'a', valueType: ast.accessor('string') }], null);
       expectModule('A', expectedModule, functionSymbol);
       expect(symbols).toEqual(expectedModule);
     });

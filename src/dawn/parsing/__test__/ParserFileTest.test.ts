@@ -57,8 +57,8 @@ describe('Parser file test', () => {
           // export calculateArea(rectangle: Rectangle): float {
           ast.export(
             ast.functionDeclaration('calculateArea', [
-              ast.functionDeclarationArgument('rectangle', 'Rectangle'),
-            ], 'float', [
+              ast.functionDeclarationArgument('rectangle', ast.accessor('Rectangle')),
+            ], ast.accessor('float'), [
 
               // return rectangle.width * rectangle .height
               ast.return(
@@ -74,8 +74,8 @@ describe('Parser file test', () => {
           // export calculateArea(circle: Circle): float {
           ast.export(
             ast.functionDeclaration('calculateArea', [
-              ast.functionDeclarationArgument('circle', 'Circle'),
-            ], 'float', [
+              ast.functionDeclarationArgument('circle', ast.accessor('Circle')),
+            ], ast.accessor('float'), [
 
               // return naivePow(circle.radius, 2i) * PI
               ast.return(
@@ -161,6 +161,6 @@ describe('Parser file test', () => {
   function expectProgramEquals(program: Program, expected: Program) {
     expect(diagnosticReporter.reportRaw).not.toHaveBeenCalled();
     expect(diagnosticReporter.report).not.toHaveBeenCalled();
-    expect(program).toEqual(expected);
+    expect(JSON.stringify(program)).toEqual(JSON.stringify(expected));
   }
 });

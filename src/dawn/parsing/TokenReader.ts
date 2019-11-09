@@ -18,7 +18,7 @@ export class TokenReader extends IterableReader<Token> {
   consume(tokenType: TokenType, diagnosticCode: string, diagnosticTemplateValues?: DiagnosticTemplateValues): Token {
     const token = this.match(tokenType);
     if(!token) {
-      throw new ParseError(diagnosticCode, diagnosticTemplateValues || {});
+      throw new ParseError(diagnosticCode, this.peekOrPrevious().location, diagnosticTemplateValues || {});
     }
 
     return this.previous();
@@ -40,5 +40,9 @@ export class TokenReader extends IterableReader<Token> {
 
     this.advance();
     return true;
+  }
+  
+  private peekOrPrevious(): Token {
+    return this.peekAt(0) || this.peekAt(-1);
   }
 }
