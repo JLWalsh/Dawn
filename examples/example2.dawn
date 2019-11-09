@@ -1,12 +1,12 @@
 
 module example {
 
-    object Rectangle {
+    export object Rectangle {
         width: float,
         height: float
     }
 
-    module submodule {
+    export module submodule {
         val x = 4i
         val y = Rectangle { 10i, 30i }
 
@@ -14,8 +14,8 @@ module example {
 
         }
 
-        module a {
-            object a {
+        export module a {
+            export object a {
 
             }
         }
@@ -49,6 +49,5 @@ module example {
 bob() {
     val rectangle = example.Rectangle { 10f, 20f }
 
-    val a = example.submodule.a.a {}
-    val c = example.submodule.a.shadowed {}
+    val a = example.submodule.a.a {  }
 }

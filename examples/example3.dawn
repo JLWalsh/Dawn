@@ -1,0 +1,25 @@
+import math
+import io
+
+module shapes {
+
+    export object Rectangle {
+        width: int,
+        height: int
+    }
+
+    export calculateArea(rect: Rectangle): int {
+        return rect.width * rect.height
+    }
+
+    export diagonalLength(rect: Rectangle): float {
+        return math.sqrt(math.pow(rect.width, 2i) + math.pow(rect.height, 2i))
+    }
+}
+
+main() {
+    val rectangle = shapes.Rectangle { 30i, 45i }
+
+    io.print(shapes.calculateArea(rectangle))
+    io.print(shapes.diagonalLength(rectangle))
+}

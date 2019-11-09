@@ -9,6 +9,9 @@ import {Program} from "@dawn/lang/ast/Program";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {SymbolDumper} from "./ui/SymbolDumper";
+import {Compilation} from "@dawn/analysis/Compilation";
+import {SymbolResolver} from "@dawn/analysis/SymbolResolver";
+import {JavascriptEmitter} from "@dawn/emission/javascript/JavascriptEmitter";
 
 const fs = require('fs');
 const command = process.argv[2];
@@ -62,6 +65,31 @@ if (command === 'parse-symbols') {
   parseSymbols(program);
 }
 
+if (command === 'compile-js') {
+  const file = process.argv[3];
+  if (!file) {
+    console.error("Usage: dawncmd compile-js [file]");
+    process.exit(1);
+  }
+
+  const fileContents = fs.readFileSync(file, 'utf-8');
+  const tokenization = tokenize(new StringIterableReader(fileContents));
+  if (tokenization.errors.length > 0) {
+    throw new Error("Syntax errors were found, aborting");
+  }
+
+  const program = parseProgram(tokenization);
+  if (!program) {
+    throw new Error("Errors were found when parsing, aborting");
+  }
+
+  const globalModule = parseSymbols(program);
+  const compilation = new Compilation(globalModule, program, new SymbolResolver());
+
+  console.log("------= Compiled Program =------");
+  console.log(new JavascriptEmitter().emit(compilation));
+}
+
 function tokenizeProgram(fileContents: string) {
   const tokenization = tokenize(new StringIterableReader(fileContents));
   const tokensWithNamedTypes = tokenization.tokens.map(t => ({ ...t, type: TokenType[t.type] }));
@@ -102,4 +130,8 @@ function parseSymbols(program: Program): ModuleSymbol {
   console.log(JSON.stringify(reporter.getReports()));
 
   return globalSymbols;
+}
+
+function compile(compilation: Compilation) {
+
 }

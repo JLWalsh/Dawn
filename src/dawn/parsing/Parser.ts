@@ -49,9 +49,11 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return importStatement();
     } else if (reader.peek().type === TokenType.IDENTIFIER) {
       return functionDeclaration();
+    } else if (reader.peek().type === TokenType.VAL) {
+      return valDeclaration();
     }
 
-    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.previous().location);
+    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.previous() && reader.previous().location);
   }
 
   function declaration(): Declaration {
@@ -396,12 +398,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return;
     }
 
+    // TODO investigate this clause not being entered when given a ParseError
     if (error instanceof ParseError) {
       reporter.report(error.diagnosticCode, { templating: error.diagnosticTemplateValues, location: error.location });
       return;
     }
 
-    reporter.reportRaw(JSON.stringify(error));
+    reporter.reportRaw(JSON.stringify(error.message));
   }
 
   return program();
