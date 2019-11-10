@@ -23,6 +23,7 @@ import ast from "@dawn/lang/ast/builder/Ast";
 import {tokenTypeToNativeType} from "@dawn/lang/NativeType";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {ParseError} from "@dawn/parsing/ParseError";
+import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
 
 export function parse(reader: TokenReader, reporter: DiagnosticReporter): Program {
 
@@ -32,8 +33,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       try {
         body.push(programContent());
       } catch (error) {
-        reportError(error);
-        recover();
+        handleError(error, [TokenType.OBJECT, TokenType.MODULE, TokenType.VAL, TokenType.IDENTIFIER]);
       }
     }
 
@@ -41,34 +41,38 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function programContent(): ProgramContent {
-    if (reader.peek().type === TokenType.MODULE) {
+    if (reader.peekType(TokenType.MODULE)) {
       return moduleDeclaration();
-    } else if (reader.peek().type === TokenType.OBJECT) {
+    } else if (reader.peekType(TokenType.OBJECT)) {
       return objectDeclaration();
-    } else if (reader.peek().type === TokenType.IMPORT) {
+    } else if (reader.peekType(TokenType.IMPORT)) {
       return importStatement();
-    } else if (reader.peek().type === TokenType.IDENTIFIER) {
+    } else if (reader.peekType(TokenType.IDENTIFIER)) {
       return functionDeclaration();
-    } else if (reader.peek().type === TokenType.VAL) {
+    } else if (reader.peekType(TokenType.VAL)) {
       return valDeclaration();
     }
 
-    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.previous() && reader.previous().location);
+    if (reader.peekType(TokenType.BRACKET_CLOSE)) {
+      throw new ParseError("MISSING_OPENING_BRACKET", reader.peekOrPrevious());
+    }
+    throw new ParseError("PROGRAM_NO_MATCHING_STATEMENT", reader.peekOrPrevious());
   }
 
   function declaration(): Declaration {
-    switch(reader.peek().type) {
-      case TokenType.MODULE:
-        return moduleDeclaration();
-      case TokenType.VAL:
-        return valDeclaration();
-      case TokenType.OBJECT:
-        return objectDeclaration();
-      case TokenType.IDENTIFIER:
-        return functionDeclaration();
-    }
+    if (reader.peekType(TokenType.MODULE))
+      return moduleDeclaration();
 
-    throw new ParseError("EXPECTED_DECLARATION", reader.previous().location);
+    if (reader.peekType(TokenType.VAL))
+      return valDeclaration();
+
+    if (reader.peekType(TokenType.OBJECT))
+      return objectDeclaration();
+
+    if (reader.peekType(TokenType.IDENTIFIER))
+      return functionDeclaration();
+
+    throw new ParseError("EXPECTED_DECLARATION", reader.peekOrPrevious());
   }
 
   function objectDeclaration(): ObjectDeclaration {
@@ -97,10 +101,14 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_MODULE_BODY");
 
     const body = mapUntil<ModuleContent>(TokenType.BRACKET_CLOSE, () => {
-      if (reader.peek().type === TokenType.EXPORT) {
-        return exportStatement();
-      } else {
-        return declaration();
+      try {
+        if (reader.peekType(TokenType.EXPORT)) {
+          return exportStatement();
+        } else {
+          return declaration();
+        }
+      } catch (error) {
+        handleError(error, [TokenType.BRACKET_CLOSE, TokenType.MODULE, TokenType.VAL, TokenType.OBJECT]);
       }
     });
 
@@ -125,11 +133,8 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function functionDeclaration(): FunctionDeclaration {
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_FUNCTION_DECLARATION");
-    reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
 
-    const args = mapWithCommasUntil<FunctionArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
-
-    reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
+    const args = functionArguments();
 
     let returnType = null;
     if (reader.match(TokenType.COLON)) {
@@ -139,6 +144,20 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     const body = functionBody();
 
     return ast.functionDeclaration(name.value, args, returnType, body);
+  }
+
+  function functionArguments(): FunctionArgument[] {
+    try {
+      reader.consume(TokenType.PAREN_OPEN, "EXPECTED_FUNCTION_PROTOTYPE");
+      const args = mapWithCommasUntil<FunctionArgument>(TokenType.PAREN_CLOSE, () => functionArgument());
+      reader.consume(TokenType.PAREN_CLOSE, "EXPECTED_END_OF_FUNCTION_ARGUMENTS");
+
+      return args;
+    } catch (error) {
+      handleError(error, [TokenType.BRACKET_OPEN, TokenType.MODULE, TokenType.VAL, TokenType.OBJECT]);
+    }
+
+    return [];
   }
 
   function functionArgument(): FunctionArgument {
@@ -151,12 +170,14 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function functionBody(): Statement[]  {
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_FUNCTION_BODY");
-    const body = [];
 
-    while(reader.peek().type !== TokenType.BRACKET_CLOSE) {
-      const stmt = statement();
-      body.push(stmt);
-    }
+    const body = mapUntil<Statement>(TokenType.BRACKET_CLOSE, () => {
+      try {
+        statement();
+      } catch (error) {
+        handleError(error, [TokenType.BRACKET_CLOSE, TokenType.RETURN, TokenType.VAL]);
+      }
+    });
 
     reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_FUNCTION_BODY");
 
@@ -164,11 +185,11 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function statement(): Statement {
-    if (reader.peek().type === TokenType.RETURN) {
+    if (reader.peekType(TokenType.RETURN)) {
       return returnStatement();
     }
 
-    if (reader.peek().type === TokenType.VAL) {
+    if (reader.peekType(TokenType.VAL)) {
       return valDeclaration();
     }
 
@@ -270,7 +291,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return groupedExpression;
     }
 
-    if (reader.peek().type === TokenType.IDENTIFIER) {
+    if (reader.peekType(TokenType.IDENTIFIER)) {
       return undefinedLiteral();
     }
 
@@ -281,13 +302,13 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return ast.literal(token.value, valueType);
     }
 
-    throw new Error("NO_MATCH_FOUND_FOR_LITERAL");
+    throw new ParseError("NO_MATCH_FOUND_FOR_LITERAL", reader.peekOrPrevious());
   }
 
   function undefinedLiteral(): ValAccessor | Instantiation {
     const acc = accessor();
 
-    if (reader.peek().type === TokenType.BRACKET_OPEN) {
+    if (reader.peekType(TokenType.BRACKET_OPEN)) {
       return instantiation(acc);
     }
 
@@ -298,7 +319,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     reader.consume(TokenType.BRACKET_OPEN, "EXPECTED_OBJECT_INSTANTIATION");
 
     let values: Expression[] | KeyValue[] = [];
-    if (reader.peek().type !== TokenType.BRACKET_CLOSE) {
+    if (!reader.peekType(TokenType.BRACKET_CLOSE)) {
       if(reader.peekAt(1).type === TokenType.COLON) {
         values = keyValueInstantiation();
       } else {
@@ -326,7 +347,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
   }
 
   function valaccessor(value: Accessor): ValAccessor {
-    if (reader.peek().type === TokenType.PAREN_OPEN) {
+    if (reader.peekType(TokenType.PAREN_OPEN)) {
       const invoc = invocation();
 
       return ast.valAccessor(value, invoc);
@@ -357,7 +378,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     return ast.accessor(name.value);
   }
 
-  function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T): T[] {
+  function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T | void): T[] {
     let isFirstValue = true;
     return mapUntil<T>(untilToken, () => {
       if (!isFirstValue) {
@@ -369,24 +390,40 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     });
   }
 
-  function mapUntil<T>(untilToken: TokenType, map: () => T): T[] {
+  function mapUntil<T>(untilToken: TokenType, map: () => T | void): T[] {
     const values = [];
-    while(reader.peek().type !== untilToken) {
+    while(!reader.peekType(untilToken) && !reader.isAtEnd()) {
       values.push(map());
     }
 
-    return values;
+    return values.filter(v => Boolean(v)) as T[];
   }
 
-  function recover() {
+  function handleError(error: any, tokensAllowedToRecoverTo: TokenType[]) {
+    reportError(error);
+    recover(tokensAllowedToRecoverTo);
+  }
+
+  function recover(tokensAllowedToRecoverTo: TokenType[]) {
+    if (reader.peekType(...tokensAllowedToRecoverTo)) {
+      return;
+    }
+
     reader.advance();
 
+    let bracketClosingsToSkip = 0;
     while(!reader.isAtEnd()) {
-      switch(reader.peek().type) {
-        case TokenType.MODULE:
-        case TokenType.OBJECT:
-          return;
+      if (reader.peekType(TokenType.BRACKET_OPEN))
+        bracketClosingsToSkip++;
+
+      if (reader.peekType(TokenType.BRACKET_CLOSE) && bracketClosingsToSkip > 0) {
+        bracketClosingsToSkip--;
+        reader.advance();
+        continue;
       }
+
+      if (reader.peekType(...tokensAllowedToRecoverTo))
+        return;
 
       reader.advance();
     }
@@ -394,17 +431,17 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
   function reportError(error: any) {
     if (typeof error === 'string') {
-      reporter.reportRaw(error);
+      reporter.reportRaw(error, DiagnosticSeverity.ERROR);
       return;
     }
 
     // TODO investigate this clause not being entered when given a ParseError
     if (error instanceof ParseError) {
-      reporter.report(error.diagnosticCode, { templating: error.diagnosticTemplateValues, location: error.location });
+      reporter.report(error.diagnosticCode, { templating: error.diagnosticTemplateValues, location: error.concernedToken && error.concernedToken.location });
       return;
     }
 
-    reporter.reportRaw(JSON.stringify(error.message));
+    reporter.reportRaw(JSON.stringify(error.message), DiagnosticSeverity.ERROR);
   }
 
   return program();

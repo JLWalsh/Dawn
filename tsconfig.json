@@ -41,6 +41,7 @@
     /* ModuleDeclaration Resolution Options */
     // "moduleResolution": "node",            /* Specify module resolution strategy: 'node' (AstNode.js) or 'classic' (TypeScript pre-1.6). */
     // "baseUrl": "./",                       /* Base directory to resolve non-absolute module names. */
+    "resolveJsonModule": true,
     "baseUrl": "./src",
     "paths": {
        "@dawn/*": ["dawn/*"],

@@ -1,12 +1,12 @@
 import {DiagnosticTemplateValues} from "@dawn/ui/DiagnosticReporter";
-import {ProgramLocation} from "@dawn/ui/ProgramLocation";
+import {Token} from "@dawn/parsing/Token";
 
-export class ParseError extends Error {
+export class ParseError {
 
   constructor(
     public readonly diagnosticCode: string,
-    public readonly location?: ProgramLocation,
+    public readonly concernedToken?: Token,
     public readonly diagnosticTemplateValues?: DiagnosticTemplateValues,
-  ) { super() }
+  ) {}
 
 }

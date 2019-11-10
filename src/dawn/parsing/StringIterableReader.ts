@@ -3,6 +3,10 @@ import {ProgramLocation} from "@dawn/ui/ProgramLocation";
 
 export class StringIterableReader extends IterableReader<string> {
 
+  private static readonly FIRST_CHAR_LENGTH = 1;
+
+  private nextExtractLocation: ProgramLocation;
+
   constructor(
     content: string,
     private column = 0,
@@ -10,6 +14,17 @@ export class StringIterableReader extends IterableReader<string> {
     private nextExtractStart = 0,
   ) {
     super(content);
+
+    this.nextExtractLocation = this.getLocation();
+  }
+
+  safePeek(predicate: (char: string) => boolean) {
+    const peekedValue = this.peek();
+    if (!peekedValue) {
+      return false;
+    }
+
+    return predicate(peekedValue);
   }
 
   advance(): string {
@@ -25,9 +40,8 @@ export class StringIterableReader extends IterableReader<string> {
 
   extract(): { lexeme: string, location: ProgramLocation } {
     const value = (this.content as string).substring(this.nextExtractStart, this.getPosition());
-    const location = { row: this.lineNumber + 1, column: this.column - value.length + 1 }; // Rows and columns are not 0-indexed
 
-    return { lexeme: value, location };
+    return { lexeme: value, location: this.getLexemeLocation() };
   }
 
 
@@ -41,14 +55,16 @@ export class StringIterableReader extends IterableReader<string> {
 
   resetExtract() {
     this.nextExtractStart = this.getPosition();
+    this.nextExtractLocation = this.getLocation();
   }
 
-  getColumn() {
-    return this.column;
+  getLexemeLocation(): ProgramLocation {
+    const span = this.getPosition() - this.nextExtractStart - StringIterableReader.FIRST_CHAR_LENGTH;
+    return { ...this.nextExtractLocation, span };
   }
 
-  getLine() {
-    return this.lineNumber;
+  private getLocation(): ProgramLocation {
+    return { row: this.lineNumber + 1, column: this.column + 1 };
   }
 
   private newline() {

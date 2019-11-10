@@ -1,9 +1,16 @@
-import {DiagnosticReporter, DiagnosticTemplateValues} from "@dawn/ui/DiagnosticReporter";
+import {DiagnosticMeta, DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
+import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
+import {AssembledDiagnostic} from "@dawn/ui/DiagnosticMessageAssembler";
 
 export class NullDiagnosticReporter implements DiagnosticReporter {
 
-  report(messageCode: string, templatedValues?: DiagnosticTemplateValues): void {}
-
   reportRaw(rawMessage: string): void {}
+
+  getWithSeverityOf(severity: DiagnosticSeverity): AssembledDiagnostic[] {
+    return [];
+  }
+
+  report(messageCode: string, meta?: DiagnosticMeta): void {
+  }
 
 }

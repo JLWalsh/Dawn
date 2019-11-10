@@ -3,8 +3,16 @@ import {tokenize} from "@dawn/parsing/Tokenizer";
 import {Token, TokenType} from "@dawn/parsing/Token";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import {ProgramLocation} from "@dawn/ui/ProgramLocation";
+import {DiagnosticMeta} from "@dawn/ui/DiagnosticReporter";
+import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 
 describe('Tokenizer', () => {
+  const diagnostics = new NullDiagnosticReporter();
+
+  beforeEach(() => {
+    diagnostics.report = jest.fn();
+    diagnostics.reportRaw = jest.fn();
+  });
 
   describe('given multiple tokens', () => {
     it('should parse multiple tokens', () => {
@@ -14,36 +22,36 @@ describe('Tokenizer', () => {
            type: TokenType.IMPORT,
            value: 'import',
            lexeme: 'import',
-           location: locationAtColumn(1),
+           location: locationAtColumn(1, 5),
          },
          {
            type: TokenType.IDENTIFIER,
            value: 'helloworld',
            lexeme: 'helloworld',
-           location: locationAtColumn(8),
+           location: locationAtColumn(8, 9),
          },
          {
            type: TokenType.INT_NUMBER,
            value: 20,
            lexeme: '20i',
-           location: locationAtColumn(19),
+           location: locationAtColumn(19, 2),
          },
          {
            type: TokenType.FLOAT_NUMBER,
            value: -40.123,
            lexeme: '-40.123f',
-           location: locationAtColumn(22),
+           location: locationAtColumn(22, 7),
          },
          {
            type: TokenType.OBJECT,
            value: 'object',
            lexeme: 'object',
-           location: locationAtColumn(31),
+           location: locationAtColumn(31, 5),
          },
          {
            type: TokenType.BANG_EQUALS,
            lexeme: '!=',
-           location: locationAtColumn(38),
+           location: locationAtColumn(38, 1),
          },
          {
            type: TokenType.HYPHEN,
@@ -66,7 +74,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 20,
         lexeme: '20i',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 2),
       }],
     });
   });
@@ -77,18 +85,21 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: -42,
         lexeme: '-42i',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 3),
       }],
     });
   });
 
-  it('should return error when parsing an integer with decimals', () => {
-    test('20.20123i', {
-      // TODO add error object instead of printing error location in message
-      errors: [
-        '(1, 9) Int may not contain decimals',
-      ],
-    });
+  it('should report error when parsing an integer with decimals', () => {
+    expectError('20.20123i', 'INT_MAY_NOT_CONTAIN_DECIMALS', { location: { row: 1, column: 1, span: 8 } });
+  });
+
+  it('should report error when parsing number without type suffix', () => {
+    expectError('-90.20123', 'EXPECTED_TYPE_FOR_NUMBER', { location: { row: 1, column: 1, span: 8 } });
+  });
+
+  it('should report error when encountering a non-supported character', () => {
+    expectError('©', 'UNRECOGNIZED_CHARACTER', { location: { row: 1, column: 1, span: 0 }, templating: { character: '©' } });
   });
 
   it('should parse a float', () => {
@@ -97,7 +108,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: 20.12354,
         lexeme: '20.12354f',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 8),
       }],
     });
   });
@@ -108,7 +119,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: 20,
         lexeme: '20f',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 2),
       }],
     });
   });
@@ -119,7 +130,7 @@ describe('Tokenizer', () => {
         type: TokenType.FLOAT_NUMBER,
         value: -42.42,
         lexeme: '-42.42f',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 6),
       }],
     });
   });
@@ -130,7 +141,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
-        location: { column: 1, row: 2 },
+        location: { column: 1, row: 2, span: 2 },
       }],
     });
   });
@@ -141,7 +152,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
-        location: locationAtColumn(2),
+        location: locationAtColumn(2, 2),
       }],
     });
   });
@@ -152,7 +163,7 @@ describe('Tokenizer', () => {
         type: TokenType.INT_NUMBER,
         value: 10,
         lexeme: '10i',
-        location: locationAtColumn(2),
+        location: locationAtColumn(2, 2),
       }],
     });
   });
@@ -263,7 +274,7 @@ describe('Tokenizer', () => {
         type: TokenType.IMPORT,
         lexeme: 'import',
         value: 'import',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -274,7 +285,7 @@ describe('Tokenizer', () => {
         type: TokenType.MODULE,
         lexeme: 'module',
         value: 'module',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -285,7 +296,7 @@ describe('Tokenizer', () => {
         type: TokenType.EXPORT,
         lexeme: 'export',
         value: 'export',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -296,7 +307,7 @@ describe('Tokenizer', () => {
         type: TokenType.OBJECT,
         lexeme: 'object',
         value: 'object',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -307,7 +318,7 @@ describe('Tokenizer', () => {
         type: TokenType.VAL,
         lexeme: 'val',
         value: 'val',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 2),
       }],
     });
   });
@@ -318,7 +329,7 @@ describe('Tokenizer', () => {
         type: TokenType.RETURN,
         lexeme: 'return',
         value: 'return',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 5),
       }],
     });
   });
@@ -328,7 +339,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.GREATER_OR_EQUAL,
         lexeme: '>=',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
@@ -348,7 +359,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.LESS_OR_EQUAL,
         lexeme: '<=',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
@@ -368,7 +379,7 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.EQUALS_EQUALS,
         lexeme: '==',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
@@ -378,28 +389,28 @@ describe('Tokenizer', () => {
       tokens: [{
         type: TokenType.BANG_EQUALS,
         lexeme: '!=',
-        location: locationAtColumn(1),
+        location: locationAtColumn(1, 1),
       }],
     });
   });
 
-  function locationAtColumn(column: number): ProgramLocation {
-    return { row: 1, column };
+  function locationAtColumn(column: number, span: number = 0): ProgramLocation {
+    return { row: 1, column, span };
   }
 
-  function test(program: string, expected: { tokens?: Token[], errors?: string[] }) {
-    const { tokens, errors } = tokenize(new StringIterableReader(program));
+  function expectError(program: string, errorCode: string, expectedErrorMeta: DiagnosticMeta) {
+    tokenize(new StringIterableReader(program), diagnostics);
 
-    if (expected.tokens) {
-      expected.tokens.forEach(token => expect(tokens).toContainEqual(token));
-    } else {
-      expect(tokens).toEqual([]);
-    }
+    expect(diagnostics.report).toHaveBeenCalledTimes(1);
+    expect(diagnostics.report).toHaveBeenCalledWith(errorCode, expectedErrorMeta);
+  }
 
-    if(expected.errors) {
-      expected.errors.forEach(error => expect(errors).toContainEqual(error));
-    } else {
-      expect(errors).toEqual([]);
-    }
+  function test(program: string, expected: { tokens: Token[] }) {
+    const tokens = tokenize(new StringIterableReader(program), diagnostics);
+
+    expected.tokens.forEach(token => expect(tokens).toContainEqual(token));
+
+    expect(diagnostics.report).not.toHaveBeenCalled();
+    expect(diagnostics.reportRaw).not.toHaveBeenCalled();
   }
 });

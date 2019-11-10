@@ -118,9 +118,9 @@ describe('SymbolParser', () => {
 
   function generateAst(literal: TemplateStringsArray) {
     const program = literal.join('\n');
-    const tokenization = tokenize(new StringIterableReader(program));
+    const tokens = tokenize(new StringIterableReader(program), new NullDiagnosticReporter());
 
-    return parse(new TokenReader(tokenization.tokens), diagnosticReporter);
+    return parse(new TokenReader(tokens), diagnosticReporter);
   }
 
   function expectModule(name: string, parent: ModuleSymbol, ...symbols: ISymbol[]) {
