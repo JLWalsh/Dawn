@@ -175,7 +175,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       try {
         statement();
       } catch (error) {
-        handleError(error, [TokenType.BRACKET_CLOSE, TokenType.RETURN, TokenType.VAL], false);
+        handleError(error, [TokenType.BRACKET_CLOSE, TokenType.RETURN, TokenType.VAL]);
       }
     });
 
@@ -399,14 +399,19 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     return values.filter(v => Boolean(v)) as T[];
   }
 
-  function recover(tokensAllowedToRecoverTo: TokenType[], accountForMissingOpeningBracket: boolean) {
+  function handleError(error: any, tokensAllowedToRecoverTo: TokenType[]) {
+    reportError(error);
+    recover(tokensAllowedToRecoverTo);
+  }
+
+  function recover(tokensAllowedToRecoverTo: TokenType[]) {
     if (reader.peekType(...tokensAllowedToRecoverTo)) {
       return;
     }
 
     reader.advance();
 
-    let bracketClosingsToSkip = accountForMissingOpeningBracket ? 1 : 0;
+    let bracketClosingsToSkip = 0;
     while(!reader.isAtEnd()) {
       if (reader.peekType(TokenType.BRACKET_OPEN))
         bracketClosingsToSkip++;
@@ -422,11 +427,6 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
       reader.advance();
     }
-  }
-
-  function handleError(error: any, tokensAllowedToRecoverTo: TokenType[], accountForMissingOpeningBracket: boolean) {
-    reportError(error);
-    recover(tokensAllowedToRecoverTo, accountForMissingOpeningBracket);
   }
 
   function reportError(error: any) {
