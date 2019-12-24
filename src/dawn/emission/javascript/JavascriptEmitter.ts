@@ -17,7 +17,7 @@ import {Instantiation, isKeyValueInstantiation, isOrderedInstantiation} from "@d
 import {Literal} from "@dawn/lang/ast/Literal";
 import {ModuleContent, ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {AstNodeType} from "@dawn/lang/ast/AstNode";
-import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
+import {ObjectSymbol} from "@dawn/analysis/symbols/ObjectSymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import ast from "@dawn/lang/ast/builder/Ast";
@@ -159,7 +159,7 @@ class JavascriptEmitterVisitor implements DeclarationVisitor<string>, StatementV
       throw new Error(`Unresolved symbol: ${this.expandAccessor(i.objectType)}`);
     }
 
-    if (!(instantiatedObject instanceof ObjectDeclarationSymbol)) {
+    if (!(instantiatedObject instanceof ObjectSymbol)) {
       throw new Error(`Expected type to be object declaration`);
     }
 

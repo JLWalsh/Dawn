@@ -1,7 +1,7 @@
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
-import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
+import {ObjectSymbol} from "@dawn/analysis/symbols/ObjectSymbol";
 import treeify, {TreeObject} from 'treeify';
 
 export class SymbolDumper {
@@ -30,7 +30,7 @@ export class SymbolDumper {
         return;
       }
 
-      if (s instanceof ObjectDeclarationSymbol) {
+      if (s instanceof ObjectSymbol) {
         object[symbolName] = 'object';
         return;
       }

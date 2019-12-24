@@ -1,6 +1,6 @@
 import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
 
-export class ValSymbol implements ISymbol {
+export class ObjectSymbol implements ISymbol {
 
   constructor(
     private readonly name: string,

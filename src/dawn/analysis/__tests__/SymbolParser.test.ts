@@ -8,7 +8,7 @@ import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
 import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
-import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
+import {ObjectSymbol} from "@dawn/analysis/symbols/ObjectSymbol";
 import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
@@ -65,8 +65,8 @@ describe('SymbolParser', () => {
       const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
       const functionSymbol = new FunctionSymbol(SymbolVisibility.INTERNAL, 'overloaded');
-      functionSymbol.definePrototype([{ valueName: 'a', valueType: ast.accessor('int') }], null);
-      functionSymbol.definePrototype([{ valueName: 'a', valueType: ast.accessor('string') }], null);
+      functionSymbol.addPrototype([{ valueName: 'a', valueType: ast.accessor('int') }], null);
+      functionSymbol.addPrototype([{ valueName: 'a', valueType: ast.accessor('string') }], null);
       expectModule('A', expectedModule, functionSymbol);
       expect(symbols).toEqual(expectedModule);
     });
@@ -85,7 +85,7 @@ describe('SymbolParser', () => {
       const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
       const objectNode = (program.body[0] as ModuleDeclaration).body[0] as ObjectDeclaration;
-      const objectSymbol = new ObjectDeclarationSymbol(SymbolVisibility.INTERNAL, 'Bobby', objectNode);
+      const objectSymbol = new ObjectSymbol(SymbolVisibility.INTERNAL, 'Bobby', objectNode);
       expectModule('A', expectedModule, objectSymbol);
       expect(symbols).toEqual(expectedModule);
     });

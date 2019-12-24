@@ -1,53 +1,54 @@
-import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
+import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
+import {ModuleScope} from "@dawn/analysis/scopes/ModuleScope";
 
 export class ModuleSymbol implements ISymbol {
 
   constructor(
-    public readonly visibility: SymbolVisibility,
-    public readonly name: string,
-    private readonly parentModule: ModuleSymbol | void = undefined,
-    private readonly symbols: Map<string, ISymbol> = new Map(),
-) {
-    this.visibility = visibility;
+    private readonly name: string,
+    private readonly scope: ModuleScope,
+  ) {}
+
+  getName(): string {
+    return name;
   }
 
-  define(symbolName: string, symbol: ISymbol) {
-    const existingSymbol = this.symbols.get(symbolName);
-    if (existingSymbol) {
-      throw new SymbolAlreadyDefinedError(existingSymbol, symbol);
-    }
-
-    this.symbols.set(symbolName, symbol);
-  }
-
-  upwardsLookup(symbolName: string): ISymbol | void {
-    const symbol = this.symbols.get(symbolName);
-    if (symbol) {
-      return symbol;
-    }
-
-    if (this.parentModule) {
-      return this.parentModule.upwardsLookup(symbolName);
-    }
-  }
-
-  downwardsLookup(symbolName: string): ISymbol | void {
-    const symbol = this.symbols.get(symbolName);
-    if (symbol && symbol.visibility === SymbolVisibility.EXPORTED) {
-      return symbol;
-    }
-  }
-
-  get(symbolName: string): ISymbol | void {
-    return this.symbols.get(symbolName);
-  }
-
-  getParent() {
-    return this.parentModule;
-  }
-
-  getSymbols() {
-    return this.symbols;
-  }
+  // define(symbolName: string, symbol: ISymbol) {
+  //   const existingSymbol = this.symbols.get(symbolName);
+  //   if (existingSymbol) {
+  //     throw new SymbolAlreadyDefinedError(existingSymbol, symbol);
+  //   }
+  //
+  //   this.symbols.set(symbolName, symbol);
+  // }
+  //
+  // upwardsLookup(symbolName: string): ISymbol | void {
+  //   const symbol = this.symbols.get(symbolName);
+  //   if (symbol) {
+  //     return symbol;
+  //   }
+  //
+  //   if (this.parentModule) {
+  //     return this.parentModule.upwardsLookup(symbolName);
+  //   }
+  // }
+  //
+  // downwardsLookup(symbolName: string): ISymbol | void {
+  //   const symbol = this.symbols.get(symbolName);
+  //   if (symbol && symbol.visibility === SymbolVisibility.EXPORTED) {
+  //     return symbol;
+  //   }
+  // }
+  //
+  // get(symbolName: string): ISymbol | void {
+  //   return this.symbols.get(symbolName);
+  // }
+  //
+  // getParent() {
+  //   return this.parentModule;
+  // }
+  //
+  // getSymbols() {
+  //   return this.symbols;
+  // }
 }
+
