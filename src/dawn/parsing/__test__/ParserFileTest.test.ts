@@ -41,15 +41,15 @@ describe('Parser file test', () => {
           // export object Rectangle { ... }
           ast.export(
             ast.objectDeclaration('Rectangle', [
-              { name: 'width', type: 'int' },
-              { name: 'height', type: 'int' },
+              { name: 'width', type: ast.accessor('int') },
+              { name: 'height', type: ast.accessor('int') },
             ])
           ),
 
           // export object Circle { ... }
           ast.export(
             ast.objectDeclaration('Circle', [
-              { name: 'radius', type: 'int' }
+              { name: 'radius', type: ast.accessor('int') }
             ])
           ),
 

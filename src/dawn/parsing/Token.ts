@@ -40,9 +40,10 @@ export enum TokenType {
   EQUALS,
 }
 
+export type Primitive = string | number;
 export interface Token {
   type: TokenType;
-  value?: any;
+  value?: Primitive;
   lexeme: string;
   location: ProgramLocation;
 }

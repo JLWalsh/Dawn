@@ -24,6 +24,7 @@ import {tokenTypeToNativeType} from "@dawn/lang/NativeType";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {ParseError} from "@dawn/parsing/ParseError";
 import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
+import {UnaryOperator} from "@dawn/lang/ast/expressions/UnaryExpression";
 
 export function parse(reader: TokenReader, reporter: DiagnosticReporter): Program {
 
@@ -84,15 +85,15 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
     reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_OBJECT_DECLARATION");
 
-    return ast.objectDeclaration(name.value, values);
+    return ast.objectDeclaration(name.value as string, values);
   }
 
   function objectValue(): ObjectValue {
     const name = reader.consume(TokenType.IDENTIFIER, "EXPECTED_VALUE_NAME");
     reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_VALUE_NAME");
-    const type = reader.consume(TokenType.IDENTIFIER, "EXPECTED_TYPE_FOR_VALUE");
+    const type = accessor();
 
-    return { name: name.value, type: type.value };
+    return { name: name.value as string, type };
   }
 
   function moduleDeclaration(): ModuleDeclaration {
@@ -114,7 +115,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
     reader.consume(TokenType.BRACKET_CLOSE, "EXPECTED_END_OF_MODULE_BODY");
 
-    return ast.moduleDeclaration(name.value, body);
+    return ast.moduleDeclaration(name.value as string, body);
   }
 
   function importStatement(): Import {
@@ -143,7 +144,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
     const body = functionBody();
 
-    return ast.functionDeclaration(name.value, args, returnType, body);
+    return ast.functionDeclaration(name.value as string, args, returnType, body);
   }
 
   function functionArguments(): FunctionArgument[] {
@@ -165,7 +166,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     reader.consume(TokenType.COLON, "EXPECTED_COLON_AFTER_ARGUMENT_NAME");
     const variableType = accessor();
 
-    return ast.functionDeclarationArgument(variableName.value, variableType);
+    return ast.functionDeclarationArgument(variableName.value as string, variableType);
   }
 
   function functionBody(): Statement[]  {
@@ -209,7 +210,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     reader.consume(TokenType.EQUALS, "EXPECTED_ASSIGNMENT_TO_VALUE");
     const initializer = expression();
 
-    return ast.valDeclaration(name.value, initializer);
+    return ast.valDeclaration(name.value as string, initializer);
   }
 
   function expression(): Expression {
@@ -277,7 +278,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       const operator = reader.previous();
       const right = unary();
 
-      return ast.unary(operator.value, right);
+      return ast.unary(operator.value as UnaryOperator, right);
     }
 
     return literal();
@@ -338,7 +339,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       reader.consume(TokenType.COLON, "EXPECTED_ASSIGNMENT_FOR_KEY_VALUE_INSTANTIATION");
       const value = expression();
 
-      return {key: key.value, value};
+      return {key: key.value as string, value};
     });
   }
 
@@ -372,10 +373,10 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
     if (reader.match(TokenType.DOT)) {
       const subAccessor = accessor();
 
-      return ast.accessor(name.value, subAccessor);
+      return ast.accessor(name.value as string, subAccessor);
     }
 
-    return ast.accessor(name.value);
+    return ast.accessor(name.value as string);
   }
 
   function mapWithCommasUntil<T>(untilToken: TokenType, map: () => T | void): T[] {

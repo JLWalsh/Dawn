@@ -1,10 +1,10 @@
 import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {DeclarationNode} from "@dawn/lang/ast/DeclarationNode";
+import {Accessor} from "@dawn/lang/ast/Accessor";
 
 export interface ObjectValue {
   name: string;
-  // TODO Change this to an accessor
-  type: string;
+  type: Accessor;
 }
 
 export interface ObjectDeclaration extends DeclarationNode {

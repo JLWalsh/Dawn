@@ -111,8 +111,8 @@ describe('Parser', () => {
 
       const expectedProgram =
         ast.objectDeclaration('TestObject', [
-          { name: 'intValue', type: 'int' },
-          { name: 'otherValue', type: 'other' },
+          { name: 'intValue', type: ast.accessor('int') },
+          { name: 'otherValue', type: ast.accessor('other') },
         ]);
 
       expectProgramEquals(program, expectedProgram);
@@ -148,6 +148,8 @@ describe('Parser', () => {
           ),
           ast.objectDeclaration('TestObject', []),
         ]);
+
+      expectProgramEquals(program, expected);
     });
   });
 

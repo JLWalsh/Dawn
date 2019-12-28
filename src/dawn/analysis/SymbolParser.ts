@@ -108,8 +108,7 @@ class SymbolParserVisitor implements DeclarationVisitor<void>, StatementVisitor<
   }
 
   visitObjectDeclaration(o: ObjectDeclaration) {
-    // TODO remove conversion to accessor once the ast is modified to use accessors for types
-    const objectSymbolValues = o.values.map(value => new ObjectSymbolValue(value.name, ast.accessor(value.type)));
+    const objectSymbolValues = o.values.map(value => new ObjectSymbolValue(value.name, value.type));
     const objectSymbol = new ObjectSymbol(o.name, objectSymbolValues);
 
     this.publishSymbol(objectSymbol);
