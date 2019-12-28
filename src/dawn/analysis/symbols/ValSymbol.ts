@@ -1,4 +1,5 @@
-import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
+import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {Scope} from "@dawn/analysis/scopes/Scope";
 
 export class ValSymbol implements ISymbol {
 
@@ -8,5 +9,13 @@ export class ValSymbol implements ISymbol {
 
   getName(): string {
     return this.name;
+  }
+
+  isVisibility(visibility: ISymbolVisibility): boolean {
+    return visibility === ISymbolVisibility.INTERNAL;
+  }
+
+  getScope(): Scope | void {
+    return undefined;
   }
 }

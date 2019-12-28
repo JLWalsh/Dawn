@@ -1,4 +1,5 @@
-import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
+import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {Scope} from "@dawn/analysis/scopes/Scope";
 
 export class ExportedSymbol implements ISymbol {
 
@@ -9,4 +10,17 @@ export class ExportedSymbol implements ISymbol {
   getName(): string {
     return this.symbol.getName();
   }
+
+  isVisibility(visibility: ISymbolVisibility): boolean {
+    return visibility === ISymbolVisibility.EXPORTED;
+  }
+
+  getSymbol() {
+    return this.symbol;
+  }
+
+  getScope(): Scope | void {
+    return undefined;
+  }
+
 }

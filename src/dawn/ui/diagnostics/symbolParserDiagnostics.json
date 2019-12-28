@@ -1,0 +1,12 @@
+{
+  "templates": {
+    "REDEFINITION_OF_SYMBOL_AS_FUNCTION": {
+      "message": "Cannot redefine symbol as function: <%= symbol %>",
+      "severity": "error"
+    },
+    "FUNCTION_PROTOTYPE_ALREADY_DEFINED": {
+      "message": "Function prototype already exists for function <%= functionName %>",
+      "severity": "error"
+    },
+  }
+}

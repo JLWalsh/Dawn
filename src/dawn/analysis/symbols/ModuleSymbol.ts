@@ -1,15 +1,23 @@
-import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
-import {ModuleScope} from "@dawn/analysis/scopes/ModuleScope";
+import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {Scope} from "@dawn/analysis/scopes/Scope";
 
 export class ModuleSymbol implements ISymbol {
 
   constructor(
     private readonly name: string,
-    private readonly scope: ModuleScope,
+    private readonly scope: Scope = new Scope(),
   ) {}
 
   getName(): string {
-    return name;
+    return this.name;
+  }
+
+  getScope() {
+    return this.scope;
+  }
+
+  isVisibility(visibility: ISymbolVisibility): boolean {
+    return visibility === ISymbolVisibility.INTERNAL;
   }
 
   // define(symbolName: string, symbol: ISymbol) {

@@ -3,11 +3,13 @@ import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {AstNodeType} from "@dawn/lang/ast/AstNode";
+import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
+import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
 
 describe('SymbolResolver', () => {
 
-  const EXTERNAL_SYMBOL: ISymbol = { visibility: SymbolVisibility.EXPORTED, name: 'exportedSymbol' };
-  const INTERNAL_SYMBOL: ISymbol = { visibility: SymbolVisibility.INTERNAL, name: 'internalSymbol' };
+  const EXTERNAL_SYMBOL: ISymbol = new ExportedSymbol(new ValSymbol('x'));
+  const INTERNAL_SYMBOL: ISymbol = new ValSymbol('z');
 
   const symbolResolver = new SymbolResolver();
 
