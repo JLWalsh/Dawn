@@ -435,7 +435,6 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
       return;
     }
 
-    // TODO investigate this clause not being entered when given a ParseError
     if (error instanceof ParseError) {
       reporter.report(error.diagnosticCode, { templating: error.diagnosticTemplateValues, location: error.concernedToken && error.concernedToken.location });
       return;
