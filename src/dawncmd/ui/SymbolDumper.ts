@@ -40,12 +40,16 @@ export class SymbolDumper {
       return this.dumpObjectSymbol(s);
     }
 
+    if (s instanceof ExportedSymbol) {
+      return this.dumpExportedSymbol(s);
+    }
+
     throw new Error(`No case found for symbol: ${JSON.stringify(s)}`)
   }
 
   private static dumpExportedSymbol(e: ExportedSymbol) {
     return {
-      exported: true,
+      exported: 'true',
       ...this.dumpSymbol(e.getSymbol()),
     };
   }
