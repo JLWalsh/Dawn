@@ -30,6 +30,10 @@ export class FunctionSymbol implements ISymbol {
   isVisibility(visibility: ISymbolVisibility): boolean {
     return visibility === ISymbolVisibility.INTERNAL;
   }
+
+  getScope(): Scope | void {
+    return undefined;
+  }
 }
 
 export class FunctionSymbolPrototype {

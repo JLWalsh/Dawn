@@ -1,104 +1,143 @@
 import {SymbolResolver} from "@dawn/analysis/SymbolResolver";
-import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
+import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
+import {Scope} from "@dawn/analysis/scopes/Scope";
+import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 
 describe('SymbolResolver', () => {
-
-  const EXTERNAL_SYMBOL: ISymbol = new ExportedSymbol(new ValSymbol('x'));
-  const INTERNAL_SYMBOL: ISymbol = new ValSymbol('z');
 
   const symbolResolver = new SymbolResolver();
 
   describe('given symbol in current module', () => {
     it('should resolve symbol', () => {
-      const module = givenModuleTopology({ bob: true }, EXTERNAL_SYMBOL);
+      const scope = new Scope();
+      const symbolInModule = givenExportedSymbol('bob');
+      scope.addSymbol(symbolInModule);
       const accessor = givenAccessor('bob');
 
-      const symbol = symbolResolver.resolve(accessor, module);
+      const symbol = symbolResolver.resolve(accessor, scope);
 
-      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+      expect(symbol).toEqual(symbolInModule);
     });
   });
 
-  describe('given symbol in upper module', () => {
-    it('should resolve symbol when addressed directly', () => {
-      const module = givenModuleTopology({ parent: { bob: true, child: {} } }, EXTERNAL_SYMBOL);
-      const childModule = getModule('parent.child', module);
-      const accessor = givenAccessor('bob');
+  describe('given symbol in upper scope', () => {
+    const UPPER_SCOPE_NAME = 'upper';
+    const CHILD_SCOPE_NAME = 'child';
 
-      const symbol = symbolResolver.resolve(accessor, childModule);
+    let globalScope: Scope;
+    let upperScope: Scope;
+    let childScope: Scope;
 
-      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+    beforeEach(() => {
+      globalScope = new Scope();
+      upperScope = new Scope(globalScope);
+      globalScope.addSymbol(new ModuleSymbol(UPPER_SCOPE_NAME, upperScope));
+      childScope = new Scope(upperScope);
+      upperScope.addSymbol(new ModuleSymbol(CHILD_SCOPE_NAME, childScope));
     });
 
-    it('should resolve symbol when addressed using parent', () => {
-      const module = givenModuleTopology({ parent: { bob: true, child: {} } }, EXTERNAL_SYMBOL);
-      const childModule = getModule('parent.child', module);
-      const accessor = givenAccessor('parent.bob');
+    it('should resolve symbol when addressed from child scope', () => {
+      const symbolInChild = givenExportedSymbol('bobby');
+      upperScope.addSymbol(symbolInChild);
 
-      const symbol = symbolResolver.resolve(accessor, childModule);
+      const symbol = symbolResolver.resolve(givenAccessor('bobby'), childScope);
 
-      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+      expect(symbol).toEqual(symbolInChild);
+    });
+
+    it('should resolve symbol when addressed from upper scope', () => {
+      const symbolInChild = givenExportedSymbol('bobby');
+      upperScope.addSymbol(symbolInChild);
+
+      const symbol = symbolResolver.resolve(givenAccessor(`${UPPER_SCOPE_NAME}.bobby`), childScope);
+
+      expect(symbol).toEqual(symbolInChild);
     });
   });
 
-  describe('given external symbol in child module', () => {
+  describe('given exported symbol in child scope', () => {
+    const upperScope = new Scope();
+    const childScope = new Scope(upperScope);
+
     it('should resolve symbol', () => {
-      const module = givenModuleTopology({ module: { bob: true } }, EXTERNAL_SYMBOL);
-      const accessor = givenAccessor('module.bob');
+      upperScope.addSymbol(new ModuleSymbol('child', childScope));
+      const symbolInChild = givenExportedSymbol('bob');
+      childScope.addSymbol(symbolInChild);
+      const accessor = givenAccessor('child.bob');
 
-      const symbol = symbolResolver.resolve(accessor, module);
+      const symbol = symbolResolver.resolve(accessor, upperScope);
 
-      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+      expect(symbol).toEqual(symbolInChild);
     });
   });
 
-  describe('given internal symbol in child module', () => {
-    it('should not resolve symbol', () => {
-      const module = givenModuleTopology({ module: { bob: true } }, INTERNAL_SYMBOL);
-      const accessor = givenAccessor('module.bob');
+  describe('given internal symbol in child scope', () => {
+    const parentScope = new Scope();
+    const childScope = new Scope(parentScope);
 
-      const symbol = symbolResolver.resolve(accessor, module);
+    beforeAll(() => {
+      parentScope.addSymbol(new ModuleSymbol('child', childScope));
+    });
+
+    it('should not resolve symbol when addressed from parent scope', () => {
+      childScope.addSymbol(givenInternalSymbol('bob'));
+      const accessor = givenAccessor('child.bob');
+
+      const symbol = symbolResolver.resolve(accessor, parentScope);
 
       expect(symbol).toBeUndefined();
     });
   });
 
-  describe('given symbol in module at same level', () => {
-    const module = givenModuleTopology({ parent: { a: { bob: true }, b: {} } }, EXTERNAL_SYMBOL);
-    const moduleB = getModule('parent.b', module);
+  describe('given symbol in other scope at same level', () => {
+    const globalScope = new Scope();
+    const parentScope = new Scope(globalScope);
+    const otherChildScope = new Scope(parentScope);
+    const childScope = new Scope(parentScope);
+    const exportedSymbol = givenExportedSymbol('anExportedSymbol');
 
-    it('should resolve symbol when accessed using parent module', () => {
-      const accessor = givenAccessor('parent.a.bob');
+    beforeAll(() => {
+      globalScope.addSymbol(new ModuleSymbol('parent', parentScope));
+      parentScope.addSymbol(new ModuleSymbol('otherChildScope', otherChildScope));
+      parentScope.addSymbol(new ModuleSymbol('childScope', childScope));
+      childScope.addSymbol(exportedSymbol);
+    });
 
-      const symbol = symbolResolver.resolve(accessor, moduleB);
+    it('should resolve symbol when addressed using parent scope', () => {
+      const accessor = givenAccessor('parentScope.otherChildScope.anExportedSymbol');
 
-      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+      const symbol = symbolResolver.resolve(accessor, childScope);
+
+      expect(symbol).toEqual(exportedSymbol);
     });
 
     it('should resolve symbol when accessed directly', () => {
-      const accessor = givenAccessor('a.bob');
+      const accessor = givenAccessor('otherChildScope.bob');
 
-      const symbol = symbolResolver.resolve(accessor, moduleB);
+      const symbol = symbolResolver.resolve(accessor, childScope);
 
-      expect(symbol).toEqual(EXTERNAL_SYMBOL);
+      expect(symbol).toEqual(exportedSymbol);
     });
 
     it('should not resolve symbol when accessed using other module at same level', () => {
-      const accessor = givenAccessor('parent.b.a.bob');
+      const accessor = givenAccessor('parent.childScope.otherChildScope.anExportedSymbol');
 
-      const symbol = symbolResolver.resolve(accessor, moduleB);
+      const symbol = symbolResolver.resolve(accessor, childScope);
 
       expect(symbol).toBeUndefined();
     });
   });
 
-  interface ModuleTopology {
-    [moduleName: string]: ModuleTopology | boolean;
+  function givenExportedSymbol(symbolName: string): ISymbol {
+    return new ExportedSymbol(givenInternalSymbol(symbolName));
+  }
+
+  function givenInternalSymbol(symbolName: string): ISymbol {
+    return new ValSymbol(symbolName);
   }
 
   function givenAccessor(rawValue: string): Accessor  {
@@ -112,29 +151,5 @@ describe('SymbolResolver', () => {
 
         return { type: AstNodeType.ACCESSOR, name: value, subAccessor: accessor };
       }, {} as Accessor);
-  }
-
-  function givenModuleTopology(modules: ModuleTopology, symbolToDefine: ISymbol, parentModule?: ModuleSymbol)  {
-    const parent = new ModuleSymbol(SymbolVisibility.EXPORTED, 'aModule', parentModule);
-    Object.keys(modules).forEach(symbolName => {
-      const symbol = modules[symbolName];
-      if (typeof symbol !== 'boolean') {
-        const module = givenModuleTopology(symbol, symbolToDefine, parent);
-
-        parent.define(symbolName, module);
-      } else {
-        parent.define(symbolName, symbolToDefine);
-      }
-    });
-
-    return parent;
-  }
-
-  function getModule(modulePath: string, module: ModuleSymbol) {
-    return modulePath
-      .split('.')
-      .reduce((currentModule, moduleName) => {
-        return currentModule.downwardsLookup(moduleName) as ModuleSymbol;
-      }, module);
   }
 });

@@ -1,5 +1,6 @@
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
+import {Scope} from "@dawn/analysis/scopes/Scope";
 
 export class ObjectSymbol implements ISymbol {
 
@@ -18,6 +19,10 @@ export class ObjectSymbol implements ISymbol {
 
   isVisibility(visibility: ISymbolVisibility): boolean {
     return visibility === ISymbolVisibility.INTERNAL;
+  }
+
+  getScope(): Scope | void {
+    return undefined;
   }
 }
 

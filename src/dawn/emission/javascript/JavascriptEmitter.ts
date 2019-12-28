@@ -52,7 +52,7 @@
 //   constructor(
 //     private readonly compilation: Compilation,
 //   ) {
-//     this.currentModule = compilation.globalSymbols;
+//     this.currentModule = compilation.globalScope;
 //   }
 //
 //   visitBinary(b: BinaryExpression): string {
