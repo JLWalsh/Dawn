@@ -1,118 +1,156 @@
 import {Program} from "@dawn/lang/ast/Program";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
-import {Declaration, DeclarationVisitor} from "@dawn/lang/ast/DeclarationNode";
+import {DeclarationVisitor} from "@dawn/lang/ast/DeclarationNode";
 import {Export} from "@dawn/lang/ast/Export";
 import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
 import {Import} from "@dawn/lang/ast/Import";
 import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
-import {SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
-import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
-import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
-import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
+import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
+import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
+import {FunctionSymbol, FunctionSymbolPrototype} from "@dawn/analysis/symbols/FunctionSymbol";
+import {StatementVisitor} from "@dawn/lang/ast/Statement";
+import {Expression} from "@dawn/lang/ast/Expression";
+import {Return} from "@dawn/lang/ast/Return";
+import {ObjectSymbol, ObjectSymbolValue} from "@dawn/analysis/symbols/ObjectSymbol";
+import ast from "@dawn/lang/ast/builder/Ast";
+import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
+import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class SymbolParser {
 
-  public static readonly GLOBAL_MODULE_NAME = '__DAWN_GLOBAL__';
+  parseAllSymbols(program: Program, diagnosticReporter: DiagnosticReporter): Scope {
+    const globalScope = new Scope();
+    const visitor = new SymbolParserVisitor(globalScope, diagnosticReporter);
 
-  parseAllSymbols(program: Program, diagnosticReporter: DiagnosticReporter): ModuleSymbol {
-    const visitor = new SymbolParserVisitor(diagnosticReporter);
+    visitor.parseAllSymbolsIn(program);
 
-    program.body.forEach(c => visitor.visitDeclaration(c));
-
-    return visitor.getGlobalModule();
+    return globalScope;
   }
 
 }
 
-class SymbolParserVisitor implements DeclarationVisitor<void> {
+class SymbolParserVisitor implements DeclarationVisitor<void>, StatementVisitor<void> {
 
   constructor(
-    private readonly diagnosticReporter: DiagnosticReporter,
-    private currentModule = new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME),
+    initialScope: Scope,
+    private readonly diagnostics: DiagnosticReporter,
+    private readonly scopeStack: Scope[] = [],
     private exportNextSymbol = false,
-  ) {}
-
-  public visitDeclaration(declaration: Declaration | Import | Export) {
-    try {
-      declaration.acceptDeclarationVisitor(this);
-    } catch (error) {
-      if (error instanceof SymbolAlreadyDefinedError) {
-        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED", { templating: { symbol: error.existingSymbol.name } });
-      }
-    }
+  ) {
+    this.scopeStack = [initialScope];
   }
 
-  getGlobalModule() {
-    return this.currentModule;
+  parseAllSymbolsIn(program: Program) {
+    program.body.forEach(declaration => declaration.acceptDeclarationVisitor(this));
   }
 
   visitExport(e: Export): void {
     this.exportNextSymbol = true;
-    this.visitDeclaration(e.exported);
+    e.exported.acceptDeclarationVisitor(this);
   }
 
-  visitFunctionDeclaration(f: FunctionDeclaration): void {
-    const functionSymbol = new FunctionSymbol(this.getSymbolVisibility(), f.name);
-    const existingSymbol = this.currentModule.get(f.name);
+  visitExpressionStatement(e: Expression): void {
+    return undefined; // An expression cannot be named, therefore it cannot be a symbol
+  }
 
-    if (existingSymbol) {
-      if (!(existingSymbol instanceof FunctionSymbol)) {
-        this.diagnosticReporter.report("SYMBOL_ALREADY_DEFINED");
+  visitFunctionDeclaration(f: FunctionDeclaration) {
+    const symbolOfFunction = this.getSymbolInCurrentScope(f.name);
+    if (symbolOfFunction) {
+      const currentVisibility = this.exportNextSymbol ? ISymbolVisibility.EXPORTED : ISymbolVisibility.INTERNAL;
+      if (!symbolOfFunction.isVisibility(currentVisibility)) {
+        this.diagnostics.report("INCONSISTENT_SYMBOL_VISIBLITY", { templating: { symbol: f.name } });
         return;
       }
 
-      if (existingSymbol.visibility != functionSymbol.visibility) {
-        this.diagnosticReporter.report("INCONSISTENT_FUNCTION_VISIBILITY");
+      if (!(symbolOfFunction instanceof FunctionSymbol)) {
+        this.diagnostics.report("CANNOT_REDEFINE_SYMBOL", { templating: { symbol: f.name } });
+        return;
       }
+    }
 
-      this.definePrototype(f, existingSymbol);
+    const functionSymbol = symbolOfFunction || new FunctionSymbol(f.name);
+    if (!symbolOfFunction) {
+      this.publishSymbol(functionSymbol);
+    }
+
+    const functionScope = new Scope();
+    const functionPrototype = new FunctionSymbolPrototype(f.returnType, f.args, functionScope);
+    if (functionSymbol.hasPrototype(functionPrototype))
+    {
+      this.diagnostics.report("FUNCTION_PROTOTYPE_ALREADY_DEFINED", { templating: { functionName: f.name }});
       return;
     }
 
-    this.definePrototype(f, functionSymbol);
-    this.currentModule.define(f.name, functionSymbol);
+    functionSymbol.addPrototype(functionPrototype);
+
+    this.scopeStack.push(functionScope);
+    f.body.forEach(statement => statement.acceptStatementVisitor(this));
+    this.scopeStack.pop();
   }
 
-  visitImport(i: Import): void {
-    // Do nothing
+  visitImport(i: Import) {
+    const importedModuleSymbol = new ModuleSymbol(i.importedModule.name);
+    this.publishSymbol(importedModuleSymbol);
   }
 
-  visitModuleDeclaration(m: ModuleDeclaration): void {
-    const module = new ModuleSymbol(this.getSymbolVisibility(), m.name, this.currentModule);
-    this.currentModule.define(m.name, module);
-    this.currentModule = module;
+  visitModuleDeclaration(m: ModuleDeclaration) {
+    const moduleScope = new Scope();
+    const moduleSymbol = new ModuleSymbol(m.name, moduleScope);
+    this.publishSymbol(moduleSymbol);
 
-    m.body.forEach(b => this.visitDeclaration(b));
-
-    this.currentModule = module.getParent() as ModuleSymbol;
+    this.scopeStack.push(moduleScope);
+    m.body.forEach(content => content.acceptDeclarationVisitor(this));
+    this.scopeStack.pop();
   }
 
-  visitObjectDeclaration(o: ObjectDeclaration): void {
-    const objectDeclarationSymbol = new ObjectDeclarationSymbol(this.getSymbolVisibility(), o.name, o);
-    this.currentModule.define(o.name, objectDeclarationSymbol);
+  visitObjectDeclaration(o: ObjectDeclaration) {
+    // TODO remove conversion to accessor once the ast is modified to use accessors for types
+    const objectSymbolValues = o.values.map(value => new ObjectSymbolValue(value.name, ast.accessor(value.type)));
+    const objectSymbol = new ObjectSymbol(o.name, objectSymbolValues);
+
+    this.publishSymbol(objectSymbol);
+  }
+
+  visitReturn(r: Return): void {
+    return; // Do nothing
   }
 
   visitValDeclaration(v: ValDeclaration): void {
-    const constantSymbol = new ValSymbol(this.getSymbolVisibility(), v.name);
-    this.currentModule.define(v.name, constantSymbol);
+    const valSymbol = new ValSymbol(v.name);
+    this.publishSymbol(valSymbol);
   }
 
-  private definePrototype(f: FunctionDeclaration, functionSymbol: FunctionSymbol) {
-    functionSymbol.definePrototype(f.args, f.returnType);
+  private publishSymbol(symbol: ISymbol) {
+    const symbolToPublish = this.exportNextSymbol ? new ExportedSymbol(symbol) : symbol;
+    this.exportNextSymbol = false;
+
+    try {
+      this.getCurrentScope().addSymbol(symbolToPublish);
+    } catch (error) {
+      if (!(error instanceof SymbolAlreadyDefinedError)) {
+        throw error;
+      }
+
+      this.diagnostics.report("CANNOT_REDEFINE_SYMBOL", { templating: { symbol: symbol.getName() }});
+    }
   }
 
-  private getSymbolVisibility(): SymbolVisibility {
-    if (this.exportNextSymbol) {
-      this.exportNextSymbol = false;
+  private getSymbolInCurrentScope(name: string): ISymbol | void {
+    const currentScope = this.getCurrentScope();
 
-      return SymbolVisibility.EXPORTED;
+    if (!currentScope) {
+      return;
     }
 
-    return SymbolVisibility.INTERNAL;
+    return currentScope.getSymbol(name);
   }
 
+  private getCurrentScope() {
+    return this.scopeStack[this.scopeStack.length - 1];
+  }
 }
+

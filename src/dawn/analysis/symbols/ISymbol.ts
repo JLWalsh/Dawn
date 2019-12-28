@@ -1,12 +1,12 @@
-import {AstNode} from "@dawn/lang/ast/AstNode";
+import {Scope} from "@dawn/analysis/Scope";
 
-export enum SymbolVisibility {
-  EXPORTED = "exported",
-  INTERNAL = "internal"
+export enum ISymbolVisibility {
+  INTERNAL,
+  EXPORTED
 }
 
 export interface ISymbol {
-  visibility: SymbolVisibility;
-  name: string;
-  node?: AstNode;
+  getName(): string;
+  getScope(): Scope | void;
+  isVisibility(visibility: ISymbolVisibility): boolean;
 }

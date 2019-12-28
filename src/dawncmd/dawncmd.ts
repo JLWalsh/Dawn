@@ -7,16 +7,13 @@ import {TokenReader} from "@dawn/parsing/TokenReader";
 import {InMemoryDiagnosticReporter} from "./InMemoryDiagnosticReporter";
 import {Program} from "@dawn/lang/ast/Program";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
-import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {SymbolDumper} from "./ui/SymbolDumper";
-import {Compilation} from "@dawn/analysis/Compilation";
-import {SymbolResolver} from "@dawn/analysis/SymbolResolver";
-import {JavascriptEmitter} from "@dawn/emission/javascript/JavascriptEmitter";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
 import parserDiagnostics from '../dawn/ui/diagnostics/parserDiagnostics.json';
 import tokenizerDiagnostics from '../dawn/ui/diagnostics/tokenizerDiagnostics.json';
 import {DiagnosticMessageAssembler} from "@dawn/ui/DiagnosticMessageAssembler";
+import {Scope} from "@dawn/analysis/Scope";
 
 const fs = require('fs');
 const command = process.argv[2];
@@ -78,10 +75,10 @@ if (command === 'compile-js') {
   const program = parseProgram(tokens);
 
   const globalModule = parseSymbols(program);
-  const compilation = new Compilation(globalModule, program, new SymbolResolver());
+  // const compilation = new Compilation(globalModule, program, new SymbolResolver());
 
   console.log("------= Compiled Program =------");
-  console.log(new JavascriptEmitter().emit(compilation));
+  // console.log(new JavascriptEmitter().emit(compilation));
 }
 
 function tokenizeProgram(fileContents: string) {
@@ -109,7 +106,7 @@ function parseProgram(tokens: Token[]): Program {
   return parsedProgram;
 }
 
-function parseSymbols(program: Program): ModuleSymbol {
+function parseSymbols(program: Program): Scope {
   const reporter = new InMemoryDiagnosticReporter(diagnosticMessageAssembler);
   const globalSymbols = new SymbolParser().parseAllSymbols(program, reporter);
 

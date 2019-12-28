@@ -1,21 +1,26 @@
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {Scope} from "@dawn/analysis/Scope";
 
-export class ValSymbol implements ISymbol {
+export class ExportedSymbol implements ISymbol {
 
   constructor(
-    private readonly name: string,
+    private readonly symbol: ISymbol,
   ) {}
 
   getName(): string {
-    return this.name;
+    return this.symbol.getName();
   }
 
   isVisibility(visibility: ISymbolVisibility): boolean {
-    return visibility === ISymbolVisibility.INTERNAL;
+    return visibility === ISymbolVisibility.EXPORTED;
+  }
+
+  getSymbol() {
+    return this.symbol;
   }
 
   getScope(): Scope | void {
-    return undefined;
+    return this.symbol.getScope();
   }
+
 }

@@ -4,25 +4,25 @@ import {parse} from "@dawn/parsing/Parser";
 import {TokenReader} from "@dawn/parsing/TokenReader";
 import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
-import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
-import {ISymbol, SymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
-import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
-import {ObjectDeclarationSymbol} from "@dawn/analysis/symbols/ObjectDeclarationSymbol";
-import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
-import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
+import {FunctionSymbol, FunctionSymbolPrototype} from "@dawn/analysis/symbols/FunctionSymbol";
+import {ObjectSymbol, ObjectSymbolValue} from "@dawn/analysis/symbols/ObjectSymbol";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import ast from "@dawn/lang/ast/builder/Ast";
+import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
+import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
+import {Scope} from "@dawn/analysis/Scope";
 
 describe('SymbolParser', () => {
+  const NO_RETURN_TYPE = null;
+
   const symbolParser = new SymbolParser();
 
   let diagnosticReporter: DiagnosticReporter;
-  let expectedModule: ModuleSymbol;
 
   beforeEach(() => {
-    expectedModule = givenGlobalModule()
-    diagnosticReporter = new NullDiagnosticReporter();
+    diagnosticReporter = jest.fn() as any;
   });
 
   describe('given some exported symbols in module', () => {
@@ -39,12 +39,16 @@ describe('SymbolParser', () => {
 
       const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
-      expectModule('A', expectedModule,
-        new ValSymbol(SymbolVisibility.EXPORTED, 'x'),
-        new ValSymbol(SymbolVisibility.INTERNAL, 'z'),
-        new ValSymbol(SymbolVisibility.EXPORTED, 'y'),
+      expectSymbolsContains(
+        symbols,
+        new ModuleSymbol('A',
+          Scope.withSymbols(
+            exported(new ValSymbol('x')),
+            new ValSymbol('z'),
+            exported(new ValSymbol('y')),
+          ),
+        ),
       );
-      expect(symbols).toEqual(expectedModule);
     });
 
     it('should define all prototypes of an overloaded function', () => {
@@ -64,11 +68,17 @@ describe('SymbolParser', () => {
 
       const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
-      const functionSymbol = new FunctionSymbol(SymbolVisibility.INTERNAL, 'overloaded');
-      functionSymbol.definePrototype([{ valueName: 'a', valueType: ast.accessor('int') }], null);
-      functionSymbol.definePrototype([{ valueName: 'a', valueType: ast.accessor('string') }], null);
-      expectModule('A', expectedModule, functionSymbol);
-      expect(symbols).toEqual(expectedModule);
+      const expectedFunctionSymbol = new FunctionSymbol('overloaded');
+      expectedFunctionSymbol.addPrototype(new FunctionSymbolPrototype(NO_RETURN_TYPE, [{ valueName: 'a', valueType: ast.accessor('int') }]));
+      expectedFunctionSymbol.addPrototype(new FunctionSymbolPrototype(NO_RETURN_TYPE, [{ valueName: 'a', valueType: ast.accessor('string') }]));
+      expectSymbolsContains(
+        symbols,
+        new ModuleSymbol('A',
+          Scope.withSymbols(
+            expectedFunctionSymbol,
+          ),
+        ),
+      );
     });
 
     it('should parse an object declaration', () => {
@@ -84,10 +94,14 @@ describe('SymbolParser', () => {
 
       const symbols = symbolParser.parseAllSymbols(program, diagnosticReporter);
 
-      const objectNode = (program.body[0] as ModuleDeclaration).body[0] as ObjectDeclaration;
-      const objectSymbol = new ObjectDeclarationSymbol(SymbolVisibility.INTERNAL, 'Bobby', objectNode);
-      expectModule('A', expectedModule, objectSymbol);
-      expect(symbols).toEqual(expectedModule);
+      const objectSymbol = new ObjectSymbol('Bobby', [new ObjectSymbolValue('intValue', ast.accessor('int'))]);
+      expectSymbolsContains(symbols,
+        new ModuleSymbol('A',
+          Scope.withSymbols(
+            objectSymbol,
+          ),
+        ),
+      );
     });
 
   });
@@ -111,7 +125,24 @@ describe('SymbolParser', () => {
 
         symbolParser.parseAllSymbols(program, diagnosticReporter);
 
-        expect(diagnosticReporter.report).toHaveBeenCalledWith("INCONSISTENT_FUNCTION_VISIBILITY");
+        expect(diagnosticReporter.report).toHaveBeenCalledWith("INCONSISTENT_SYMBOL_VISIBLITY", expect.anything());
+      });
+    });
+  });
+
+  describe('given an existing symbol', () => {
+    describe('when redeclaring symbol', () => {
+      it('should report error', () => {
+        const program = generateAst`
+          val x = 10i;
+          
+          x() {}
+        `;
+        diagnosticReporter.report = jest.fn();
+
+        symbolParser.parseAllSymbols(program, diagnosticReporter);
+
+        expect(diagnosticReporter.report).toHaveBeenCalledWith("CANNOT_REDEFINE_SYMBOL", expect.anything());
       });
     });
   });
@@ -123,14 +154,11 @@ describe('SymbolParser', () => {
     return parse(new TokenReader(tokens), diagnosticReporter);
   }
 
-  function expectModule(name: string, parent: ModuleSymbol, ...symbols: ISymbol[]) {
-    const module = new ModuleSymbol(SymbolVisibility.INTERNAL, name, parent);
-    symbols.forEach(s => module.define(s.name, s));
-
-    parent.define(name, module);
+  function exported(symbol: ISymbol) {
+    return new ExportedSymbol(symbol);
   }
 
-  function givenGlobalModule(): ModuleSymbol {
-    return new ModuleSymbol(SymbolVisibility.INTERNAL, SymbolParser.GLOBAL_MODULE_NAME);
+  function expectSymbolsContains(symbols: Scope, symbol: ISymbol) {
+    expect(symbols.getSymbol(symbol.getName())).toEqual(symbol);
   }
 });

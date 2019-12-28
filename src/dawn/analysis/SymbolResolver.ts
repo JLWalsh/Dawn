@@ -1,34 +1,42 @@
-import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
-import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
+import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class SymbolResolver {
 
-  resolve(symbolValue: Accessor, currentModule: ModuleSymbol): ISymbol | void {
-    const symbol = currentModule.upwardsLookup(symbolValue.name);
+  resolve(symbolValue: Accessor, currentScope: Scope): ISymbol | void {
+    const symbol = currentScope.lookup(symbolValue.name);
     if (!symbol) {
       return;
     }
 
-    if (symbolValue.subAccessor && symbol instanceof ModuleSymbol) {
-      return this.drilldownResolve(symbolValue.subAccessor, symbol);
+    if (symbolValue.subAccessor) {
+      const symbolChildren = symbol.getScope();
+      if (symbolChildren) {
+        return this.downwardsResolve(symbolValue.subAccessor, symbolChildren);
+      }
+
+      return;
     }
 
     return symbol;
   }
 
-  // A drilldown resolve is when we can only do downwards lookup from now on
-  // For example, if we were to lookup a.b.c, and a contained b and c,
-  // An normal resolve would find a, then find b, then find c by looking a from b
-  // Obviously, this shouldn't be allowed, which is why downward lookups are implemented
-  private drilldownResolve(symbolValue: Accessor, currentModule: ModuleSymbol): ISymbol | void {
-    const symbol = currentModule.downwardsLookup(symbolValue.name);
-    if (symbol instanceof ModuleSymbol && symbolValue.subAccessor) {
-      return this.drilldownResolve(symbolValue.subAccessor, symbol);
+  private downwardsResolve(symbolValue: Accessor, currentScope: Scope): ISymbol | void {
+    const symbol = currentScope.getSymbol(symbolValue.name);
+    if (!symbol || !symbol.isVisibility(ISymbolVisibility.EXPORTED)) {
+      return;
     }
 
-    if (symbol && !symbolValue.subAccessor) {
-      return symbol;
+    if (symbolValue.subAccessor) {
+      const symbolScope = symbol.getScope();
+      if (symbolScope) {
+        return this.downwardsResolve(symbolValue.subAccessor, symbolScope);
+      }
+
+      return;
     }
+
+    return symbol;
   }
 }

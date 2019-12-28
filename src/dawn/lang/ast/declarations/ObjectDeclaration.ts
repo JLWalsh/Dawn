@@ -3,6 +3,7 @@ import {DeclarationNode} from "@dawn/lang/ast/DeclarationNode";
 
 export interface ObjectValue {
   name: string;
+  // TODO Change this to an accessor
   type: string;
 }
 
