@@ -9,7 +9,6 @@ import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {ObjectDeclaration} from "@dawn/lang/ast/declarations/ObjectDeclaration";
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
-import {Scope} from "@dawn/analysis/scopes/Scope";
 import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
 import {FunctionSymbol, FunctionSymbolPrototype} from "@dawn/analysis/symbols/FunctionSymbol";
 import {StatementVisitor} from "@dawn/lang/ast/Statement";
@@ -19,6 +18,7 @@ import {ObjectSymbol, ObjectSymbolValue} from "@dawn/analysis/symbols/ObjectSymb
 import ast from "@dawn/lang/ast/builder/Ast";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
 import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class SymbolParser {
 

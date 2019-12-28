@@ -173,7 +173,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
     const body = mapUntil<Statement>(TokenType.BRACKET_CLOSE, () => {
       try {
-        statement();
+        return statement();
       } catch (error) {
         handleError(error, [TokenType.BRACKET_CLOSE, TokenType.RETURN, TokenType.VAL]);
       }

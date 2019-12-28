@@ -1,5 +1,5 @@
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class ValSymbol implements ISymbol {
 

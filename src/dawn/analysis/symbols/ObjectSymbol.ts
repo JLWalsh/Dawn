@@ -1,6 +1,6 @@
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {Accessor} from "@dawn/lang/ast/Accessor";
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class ObjectSymbol implements ISymbol {
 

@@ -3,9 +3,9 @@ import {FunctionSymbol} from "@dawn/analysis/symbols/FunctionSymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
 import {ObjectSymbol} from "@dawn/analysis/symbols/ObjectSymbol";
 import treeify, {TreeObject} from 'treeify';
-import {Scope} from "@dawn/analysis/scopes/Scope";
 import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
 import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class SymbolDumper {
 

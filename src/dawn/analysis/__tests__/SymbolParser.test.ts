@@ -11,8 +11,8 @@ import {ObjectSymbol, ObjectSymbolValue} from "@dawn/analysis/symbols/ObjectSymb
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
-import {Scope} from "@dawn/analysis/scopes/Scope";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
+import {Scope} from "@dawn/analysis/Scope";
 
 describe('SymbolParser', () => {
   const NO_RETURN_TYPE = null;

@@ -4,11 +4,10 @@ import {AstNodeType} from "@dawn/lang/ast/AstNode";
 import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
 import {ValSymbol} from "@dawn/analysis/symbols/ValSymbol";
 import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
-import {Scope} from "@dawn/analysis/scopes/Scope";
 import {ModuleSymbol} from "@dawn/analysis/symbols/ModuleSymbol";
+import {Scope} from "@dawn/analysis/Scope";
 
 describe('SymbolResolver', () => {
-
   const symbolResolver = new SymbolResolver();
 
   describe('given symbol in current module', () => {
@@ -102,13 +101,13 @@ describe('SymbolResolver', () => {
 
     beforeAll(() => {
       globalScope.addSymbol(new ModuleSymbol('parent', parentScope));
-      parentScope.addSymbol(new ModuleSymbol('otherChildScope', otherChildScope));
-      parentScope.addSymbol(new ModuleSymbol('childScope', childScope));
-      childScope.addSymbol(exportedSymbol);
+      parentScope.addSymbol(exported(new ModuleSymbol('otherChildScope', otherChildScope)));
+      parentScope.addSymbol(exported(new ModuleSymbol('childScope', childScope)));
+      otherChildScope.addSymbol(exportedSymbol);
     });
 
     it('should resolve symbol when addressed using parent scope', () => {
-      const accessor = givenAccessor('parentScope.otherChildScope.anExportedSymbol');
+      const accessor = givenAccessor('parent.otherChildScope.anExportedSymbol');
 
       const symbol = symbolResolver.resolve(accessor, childScope);
 
@@ -116,7 +115,7 @@ describe('SymbolResolver', () => {
     });
 
     it('should resolve symbol when accessed directly', () => {
-      const accessor = givenAccessor('otherChildScope.bob');
+      const accessor = givenAccessor('otherChildScope.anExportedSymbol');
 
       const symbol = symbolResolver.resolve(accessor, childScope);
 
@@ -131,6 +130,10 @@ describe('SymbolResolver', () => {
       expect(symbol).toBeUndefined();
     });
   });
+
+  function exported(symbol: ISymbol): ISymbol {
+    return new ExportedSymbol(symbol);
+  }
 
   function givenExportedSymbol(symbolName: string): ISymbol {
     return new ExportedSymbol(givenInternalSymbol(symbolName));

@@ -1,6 +1,6 @@
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class SymbolResolver {
 
@@ -24,7 +24,7 @@ export class SymbolResolver {
 
   private downwardsResolve(symbolValue: Accessor, currentScope: Scope): ISymbol | void {
     const symbol = currentScope.getSymbol(symbolValue.name);
-    if (!symbol || symbol.isVisibility(ISymbolVisibility.EXPORTED)) {
+    if (!symbol || !symbol.isVisibility(ISymbolVisibility.EXPORTED)) {
       return;
     }
 

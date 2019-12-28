@@ -4,7 +4,7 @@ import {Program} from "@dawn/lang/ast/Program";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
 import {Accessor} from "@dawn/lang/ast/Accessor";
 import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 export function compile(program: Program, diagnosticReporter: DiagnosticReporter): Compilation {
   const globalSymbols = new SymbolParser().parseAllSymbols(program, diagnosticReporter);

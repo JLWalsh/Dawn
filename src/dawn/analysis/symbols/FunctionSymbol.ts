@@ -1,7 +1,7 @@
 import {ISymbol, ISymbolVisibility} from "@dawn/analysis/symbols/ISymbol";
 import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
 import {Accessor} from "@dawn/lang/ast/Accessor";
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 export class FunctionSymbol implements ISymbol {
 

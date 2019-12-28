@@ -8,14 +8,12 @@ import {InMemoryDiagnosticReporter} from "./InMemoryDiagnosticReporter";
 import {Program} from "@dawn/lang/ast/Program";
 import {SymbolParser} from "@dawn/analysis/SymbolParser";
 import {SymbolDumper} from "./ui/SymbolDumper";
-import {Compilation} from "@dawn/analysis/Compilation";
-import {SymbolResolver} from "@dawn/analysis/SymbolResolver";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
 import parserDiagnostics from '../dawn/ui/diagnostics/parserDiagnostics.json';
 import tokenizerDiagnostics from '../dawn/ui/diagnostics/tokenizerDiagnostics.json';
 import {DiagnosticMessageAssembler} from "@dawn/ui/DiagnosticMessageAssembler";
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 const fs = require('fs');
 const command = process.argv[2];

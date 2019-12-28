@@ -1,4 +1,4 @@
-import {Scope} from "@dawn/analysis/scopes/Scope";
+import {Scope} from "@dawn/analysis/Scope";
 
 export enum ISymbolVisibility {
   INTERNAL,
