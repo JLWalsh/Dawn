@@ -4,7 +4,7 @@ import {Scope} from "@dawn/analysis/Scope";
 
 export class SymbolResolver {
 
-  resolve(symbolValue: Accessor, currentScope: Scope): ISymbol | void {
+  resolve(symbolValue: Accessor, currentScope: Scope): ([ISymbol, Scope]) | void {
     const symbol = currentScope.lookup(symbolValue.name);
     if (!symbol) {
       return;
@@ -19,10 +19,10 @@ export class SymbolResolver {
       return;
     }
 
-    return symbol;
+    return [symbol, currentScope];
   }
 
-  private downwardsResolve(symbolValue: Accessor, currentScope: Scope): ISymbol | void {
+  private downwardsResolve(symbolValue: Accessor, currentScope: Scope): ([ISymbol, Scope]) | void {
     const symbol = currentScope.getSymbol(symbolValue.name);
     if (!symbol || !symbol.isVisibility(ISymbolVisibility.EXPORTED)) {
       return;
@@ -37,6 +37,6 @@ export class SymbolResolver {
       return;
     }
 
-    return symbol;
+    return [symbol, currentScope];
   }
 }

@@ -8,6 +8,22 @@ module shapes {
         height: int
     }
 
+    object A {
+        a: B
+    }
+
+    object B {
+        b: D
+    }
+
+    object D {
+        d: boolean
+    }
+
+    object C {
+        c: B
+    }
+
     export calculateArea(rect: Rectangle): int {
         return rect.width * rect.height
     }
