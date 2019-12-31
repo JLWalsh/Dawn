@@ -12,6 +12,7 @@ export class TypeContext {
   }
 
   defineType(mappedSymbol: ISymbol, type: Types.Type) {
+    // TODO handle this error
     if (this.hasTypeFor(mappedSymbol)) {
       throw new Error(`A type already exists for ${mappedSymbol.getName()}`);
     }

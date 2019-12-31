@@ -25,8 +25,22 @@ export class Scope {
     }
   }
 
-  addSymbol(symbol: ISymbol) {
-    this.symbols.set(symbol.getName(), symbol);
+  addSymbol(...symbols: ISymbol[]) {
+    symbols.forEach(symbol => {
+      this.symbols.set(symbol.getName(), symbol);
+    });
+  }
+
+  listSymbolsMatching<T extends ISymbol>(predicate: (symbol: ISymbol) => symbol is T): T[] {
+    const symbols: T[] = [];
+
+    for (const symbol of this.symbols.values()) {
+      if (predicate(symbol)) {
+        symbols.push(symbol);
+      }
+    }
+
+    return symbols;
   }
 
   getSymbol(name: string): ISymbol | void {
