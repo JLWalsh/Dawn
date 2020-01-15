@@ -20,7 +20,4 @@ export class Compilation {
     public readonly symbolResolver: SymbolResolver,
   ) {}
 
-  public resolve(symbolName: Accessor): ISymbol | void {
-    return this.symbolResolver.resolve(symbolName, this.globalScope);
-  }
 }

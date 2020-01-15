@@ -3,32 +3,17 @@ import io
 
 module shapes {
 
-    export object Rectangle {
-        width: int,
-        height: int
-    }
-
-    object A {
-        a: B
-    }
-
-    object B {
-        b: D
-    }
-
-    object D {
-        d: boolean
-    }
-
-    object C {
-        c: B
-    }
+    val PI = 3.1415f
 
     export calculateArea(rect: Rectangle): int {
         return rect.width * rect.height
     }
 
     export diagonalLength(rect: Rectangle): float {
+        val z = x
+        val x = 10i
+        val y = 20i
+
         return math.sqrt(math.pow(rect.width, 2i) + math.pow(rect.height, 2i))
     }
 }
