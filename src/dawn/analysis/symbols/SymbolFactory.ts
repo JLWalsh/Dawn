@@ -1,79 +1,73 @@
 import {ITypeSymbol} from "@dawn/analysis/symbols/ITypeSymbol";
 import {IFunctionSymbol} from "@dawn/analysis/symbols/IFunctionSymbol";
 import {IArgumentSymbol} from "@dawn/analysis/symbols/IArgumentSymbol";
-import {SymbolKind} from "@dawn/analysis/symbols/SymbolKind";
-import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
-import {Scope} from "@dawn/analysis/Scope";
 import {IModuleSymbol} from "@dawn/analysis/symbols/IModuleSymbol";
-import {SymbolVisibility} from "@dawn/analysis/symbols/SymbolVisibility";
+import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/ObjectDeclaration";
+import {IObjectSymbol} from "@dawn/analysis/symbols/IObjectSymbol";
+import {FunctionDeclaration} from "@dawn/lang/ast/declarations/FunctionDeclaration";
+import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
+import {IValSymbol} from "@dawn/analysis/symbols/IValSymbol";
+import {ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
+import {IExportableSymbolVisibility} from "@dawn/analysis/symbols/IExportableSymbol";
+import {FunctionSymbol} from "@dawn/analysis/symbols/implementations/FunctionSymbol";
+import {Accessor} from "@dawn/lang/ast/Accessor";
+import {ArgumentSymbol} from "@dawn/analysis/symbols/implementations/ArgumentSymbol";
+import {FunctionArgument} from "@dawn/lang/ast/declarations/FunctionArgument";
+import {ModuleSymbol} from "@dawn/analysis/symbols/implementations/ModuleSymbol";
+import {IObjectPropertySymbol, IObjectPropertySymbolVisibility} from "@dawn/analysis/symbols/IObjectPropertySymbol";
+import {ObjectPropertySymbol} from "@dawn/analysis/symbols/implementations/ObjectPropertySymbol";
+import {ObjectSymbol} from "@dawn/analysis/symbols/implementations/ObjectSymbol";
 
 export class SymbolFactory {
 
-  argumentSymbol(name: string, type: ITypeSymbol, func: IFunctionSymbol): IArgumentSymbol {
-    return {
-      ...this.symbol(name, { symbol: func }),
-      getType(): ITypeSymbol {
-        return type;
-      },
-      getKind() {
-        return SymbolKind.ARGUMENT;
-      },
-    };
+  argumentSymbol(arg: FunctionArgument, containingFunctionSymbol: IFunctionSymbol): IArgumentSymbol {
+    const argType = this.typeSymbol(arg.valueType);
+
+    return new ArgumentSymbol(containingFunctionSymbol, arg.valueName, argType);
+  };
+
+  functionSymbol(f: FunctionDeclaration, visibility: IExportableSymbolVisibility, containingModule: IModuleSymbol | void): IFunctionSymbol {
+    const returnType = this.typeSymbol(f.returnType);
+    // Forward ref of function symbol, since there is a circular dependency between the function and it's args
+    const functionSymbol = new FunctionSymbol(f.name, returnType, containingModule, visibility);
+
+    f.args.map(arg => this.argumentSymbol(arg, functionSymbol))
+    .forEach(arg => functionSymbol.addArgument(arg));
+
+    return functionSymbol;
+  };
+
+  moduleSymbol(m: ModuleDeclaration, visibility: IExportableSymbolVisibility, containingModule: IModuleSymbol): IModuleSymbol {
+    return new ModuleSymbol(m.name, visibility, containingModule);
+  };
+
+  globalModule(): IModuleSymbol {
+    const emptyModuleName = "";
+    return new ModuleSymbol(emptyModuleName, IExportableSymbolVisibility.INTERNAL);
   }
 
-  functionSymbol(name: string, args: IArgumentSymbol[], returnType: ITypeSymbol, visiblity: SymbolVisibility, module: IModuleSymbol): IFunctionSymbol {
-    return {
-      ...this.symbol(name, { module }),
-      ...this.exportedSymbol(visiblity),
-      getKind() {
-        return SymbolKind.FUNCTION;
-      },
-      getArguments(): IArgumentSymbol[] {
-        return args;
-      },
-      getReturnType(): ITypeSymbol | void {
-        return returnType;
-      },
-    };
-  }
+  objectSymbol(o: ObjectDeclaration, visibility: IExportableSymbolVisibility, containingModule: IModuleSymbol): IObjectSymbol {
+    const objectSymbol = new ObjectSymbol(o.name, visibility, containingModule);
 
-  moduleSymbol(name: string, members: ISymbol[], visiblity: SymbolVisibility, module?: IModuleSymbol): IModuleSymbol {
-    return {
-      ...this.symbol(name, { module }),
-      ...this.exportedSymbol(visiblity),
-      getKind() {
-        return SymbolKind.MODULE;
-      },
-      getMembers(): ISymbol[] {
-        return members;
-      },
-    };
-  }
+    o.values.map(property => this.objectPropertySymbol(property, objectSymbol))
+      .forEach(property => objectSymbol.addProperty(property));
 
-  objectPropertySymbol(name: string)
+    return objectSymbol;
+  };
 
-  private exportedSymbol(visiblity: SymbolVisibility) {
-    return {
-      getVisibility(): SymbolVisibility {
-        return visiblity;
-      }
-    }
-  }
+  objectPropertySymbol (property: ObjectValue, containingType: IObjectSymbol): IObjectPropertySymbol {
+    const propertyType = this.typeSymbol(property.type);
+    const propertyVisibility = IObjectPropertySymbolVisibility.PUBLIC; // TODO use the ObjectValue's visibility when shadowed (private) symbols are implemented
 
-  private symbol(name: string, { type, symbol, module }: { type?: ITypeSymbol, symbol?: ISymbol, module?: IModuleSymbol }) {
-    return {
-      getName(): string {
-        return name;
-      },
-      getContainingSymbol(): ISymbol | void {
-        return symbol;
-      },
-      getContainingModule(): IModuleSymbol | void {
-        return module;
-      },
-      getContainingType(): ITypeSymbol | void {
-        return type;
-      },
-    };
-  }
+    return new ObjectPropertySymbol(property.name, propertyType, containingType, propertyVisibility);
+  };
+
+  valSymbol(v: ValDeclaration, visibility: IExportableSymbolVisibility): IValSymbol {
+
+  };
+
+  typeSymbol(returnType: Accessor | null): ITypeSymbol {
+
+  };
+
 }

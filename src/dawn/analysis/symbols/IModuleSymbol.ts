@@ -2,8 +2,10 @@ import {SymbolKind} from "@dawn/analysis/symbols/SymbolKind";
 import {IExportableSymbol} from "@dawn/analysis/symbols/IExportableSymbol";
 import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
 
-export interface IModuleSymbol extends IExportableSymbol {
+export interface IModuleSymbol extends ISymbol {
   getKind(): SymbolKind.MODULE;
 
   getMembers(): ISymbol[];
+
+  addMember(symbol: ISymbol): void;
 }
