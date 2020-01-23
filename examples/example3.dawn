@@ -24,6 +24,8 @@ module shapes {
         c: B
     }
 
+    val permanent = Rectangle { 20i, 30i }
+
     export calculateArea(rect: Rectangle): int {
         return rect.width * rect.height
     }
