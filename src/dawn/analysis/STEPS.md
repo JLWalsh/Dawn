@@ -4,8 +4,8 @@
 ### Type Symbol discovery
 The first step of static analysis is type discovery. 
 The AST is walked, and all modules and `object` types are registered in
-their according module. All modules are mapped to their AST node (Map<ModuleDeclaration, TypeTable>),
-allowing their type table to be retreived for the next step.
+the module's type table. All type tables are mapped to their AST node (Map<ModuleDeclaration, TypeTable>),
+allowing their type table to be retrieved for the next step.
 
 Note that as for now, recursive types aren't allowed.
 
@@ -14,7 +14,8 @@ The second step of static analysis is typechecking, which involves ensuring
 that the program's types are correctly used. Again, the AST is walked, but this time
 only `val` declaration (be they inside or outside a function) and functions are typechecked.
 In order to be able to resolve the types that these declarations will contain, each time a module
-is entered, it's type table is retrieved using that module's node. 
+is entered, it's type table is retrieved using that module's node. Note that type tables may
+also lookup for a type in it's parent type table, if it does not possess the demanded type.
 
 Alongside this process, scopes of all existing variables will be maintained accordingly. In order
 to ensure that no variables are used before their declaration (see example below), the traversal
