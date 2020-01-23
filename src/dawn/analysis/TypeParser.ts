@@ -11,16 +11,21 @@ import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {Types} from "@dawn/analysis/types/Types";
 import {Type, TypeVisibility} from "@dawn/analysis/types/Type";
 
-export namespace TypeFinder {
+export namespace TypeParser {
 
   export interface ProgramTypes {
     types: Map<ModuleDeclaration, ModuleType>;
+    globalModuleTypes: ModuleType;
   }
 
   export function findAllTypes(program: Program, diagnostics: DiagnosticReporter): ProgramTypes {
     const visitor = new TypeFinderVisitor(diagnostics);
 
     return visitor.findAllTypesOf(program);
+  }
+
+  function defineModuleType(programTypes: ProgramTypes, module: ModuleDeclaration, moduleType: ModuleType) {
+    programTypes.types.set(module, moduleType);
   }
 
   class TypeFinderVisitor implements DeclarationVisitor<void> {
@@ -34,9 +39,9 @@ export namespace TypeFinder {
     ) {}
 
     findAllTypesOf(program: Program): ProgramTypes {
-      this.programTypes = { types: new Map() };
+      this.programTypes = { types: new Map(), globalModuleTypes: Types.newModuleType(TypeVisibility.INTERNAL) };
       this.exportNextType = false;
-      this.currentModule = Types.newModuleType(TypeVisibility.INTERNAL);
+      this.currentModule = this.programTypes.globalModuleTypes;
 
       program.body.forEach(declaration => declaration.acceptDeclarationVisitor(this));
 
@@ -49,6 +54,7 @@ export namespace TypeFinder {
 
       m.body.forEach(declaration => declaration.acceptDeclarationVisitor(this));
 
+      defineModuleType(this.programTypes, m, this.currentModule);
       this.defineTypeInModule(parentModule, m.name, this.currentModule);
       this.currentModule = parentModule;
     }
@@ -59,10 +65,14 @@ export namespace TypeFinder {
       this.defineTypeInModule(this.currentModule, o.name, objectType);
     }
 
+    visitExport(e: Export): void {
+      this.exportNextType = true;
+      e.exported.acceptDeclarationVisitor(this);
+    }
+
     // Not needed for this pass
     visitFunctionDeclaration(f: FunctionDeclaration): void {}
     visitImport(i: Import): void {}
-    visitExport(e: Export): void {}
     visitValDeclaration(v: ValDeclaration): void {}
 
     private defineTypeInModule(module: ModuleType, typeName: string, type: Type) {
