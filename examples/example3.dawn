@@ -3,10 +3,6 @@ import io
 
 module shapes {
 
-    module submodule {
-
-    }
-
     export object Rectangle {
         width: int,
         height: int

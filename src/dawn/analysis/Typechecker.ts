@@ -11,15 +11,13 @@ import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
 import {StatementVisitor} from "@dawn/lang/ast/Statement";
 import {Expression, ExpressionVisitor} from "@dawn/lang/ast/Expression";
 import {Return} from "@dawn/lang/ast/Return";
-import {ModuleType} from "@dawn/analysis/types/ModuleType";
 import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
 import {TypeReader} from "@dawn/analysis/types/TypeReader";
 import {Accessor, describeAccessor} from "@dawn/lang/ast/Accessor";
-import {ExpressionType, Type} from "@dawn/analysis/types/Type";
+import {Type} from "@dawn/analysis/types/Type";
 import {Keyword} from "@dawn/lang/Keyword";
 import {Types} from "@dawn/analysis/types/Types";
-import {Scopes} from "@dawn/analysis/Scope";
-import {VariableAlreadyDefinedError} from "@dawn/analysis/errors/VariableAlreadyDefinedError";
+import {SymbolAlreadyDefinedError} from "@dawn/analysis/errors/SymbolAlreadyDefinedError";
 import {EqualityExpression} from "@dawn/lang/ast/expressions/EqualityExpression";
 import {UnaryExpression} from "@dawn/lang/ast/expressions/UnaryExpression";
 import {Instantiation} from "@dawn/lang/ast/Instantiation";
@@ -27,6 +25,7 @@ import {ComparisonExpression} from "@dawn/lang/ast/expressions/ComparisonExpress
 import {BinaryExpression} from "@dawn/lang/ast/expressions/BinaryExpression";
 import {Literal} from "@dawn/lang/ast/Literal";
 import {ValAccessor} from "@dawn/lang/ast/ValAccessor";
+import {Scope} from "@dawn/analysis/Scope";
 
 export namespace Typechecker {
 
@@ -36,18 +35,16 @@ export namespace Typechecker {
 
   }
 
-  class TypecheckerVisitor implements DeclarationVisitor<void>, StatementVisitor<void>, ExpressionVisitor<ExpressionType | void> {
+  class TypecheckerVisitor implements DeclarationVisitor<void>, StatementVisitor<void>, ExpressionVisitor<Type | void> {
 
-    private currentModule: ModuleType;
-    private currentScope: Scopes.Scope;
+    private currentScope: Scope.ScopeData;
     private expectedReturnType: Type | void;
 
     constructor(
       private readonly diagnostics: DiagnosticReporter,
       private readonly programTypes: ProgramTypes,
     ) {
-      this.currentModule = programTypes.globalModuleTypes;
-      this.currentScope = { variables: new Map() };
+      this.currentScope = Scope.createDefaultScope();
       this.expectedReturnType = undefined;
     }
 
@@ -58,15 +55,17 @@ export namespace Typechecker {
     visitFunctionDeclaration(f: FunctionDeclaration): void {
       this.expectedReturnType = this.readFunctionReturnType(f);
       const parentScope = this.currentScope;
-      this.currentScope = { variables: new Map(), parent: parentScope };
+      this.currentScope = Scope.createAsChildOf(parentScope);
+
       this.typecheckFunctionArguments(f);
       f.body.forEach(statement => statement.acceptStatementVisitor(this));
+
       this.currentScope = parentScope;
     }
 
     private typecheckFunctionArguments(f: FunctionDeclaration) {
       f.args.forEach(arg => {
-        const type = TypeReader.readType(arg.valueType, this.currentModule);
+        const type = TypeReader.readType(arg.valueType, this.currentScope);
         if (!type) {
           this.reportUnresolvedType(arg.valueType);
           return;
@@ -82,7 +81,7 @@ export namespace Typechecker {
         return defaultReturnType;
       }
 
-      const returnType = TypeReader.readType(f.returnType, this.currentModule);
+      const returnType = TypeReader.readType(f.returnType, this.currentScope);
       if (!returnType) {
         this.reportUnresolvedType(f.returnType);
         return defaultReturnType;
@@ -92,20 +91,27 @@ export namespace Typechecker {
     }
 
     visitModuleDeclaration(m: ModuleDeclaration): void {
-      const parentModule = this.currentModule;
+      const parentScope = this.currentScope;
       const currentModule = this.programTypes.types.get(m);
       if (!currentModule) {
         this.diagnostics.reportRaw('Compiler bug: no type has been matched to module', DiagnosticSeverity.ERROR);
         return;
       }
-      this.currentModule = currentModule;
 
-      m.body.forEach(declaration => declaration.acceptDeclarationVisitor(this));
+      try {
+        this.currentScope = Scope.createAsNamedChildOf(parentScope, m.name);
 
-      this.currentModule = parentModule;
+        m.body.forEach(declaration => declaration.acceptDeclarationVisitor(this));
+
+        this.currentScope = parentScope;
+      } catch (error) {
+        if (error instanceof SymbolAlreadyDefinedError) {
+          this.diagnostics.report("SYMBOL_ALREADY_DEFINED_IN_SCOPE", { templating: { symbol: error.symbolAlreadyDefined }});
+        }
+      }
     }
 
-    visitEquality(e: EqualityExpression): ExpressionType | void {
+    visitEquality(e: EqualityExpression): Type | void {
       const leftType = e.left.acceptExpressionVisitor(this);
       const rightType = e.right.acceptExpressionVisitor(this);
       if (!leftType || !rightType) {
@@ -119,7 +125,7 @@ export namespace Typechecker {
       return Types.newNativeType(Keyword.BOOLEAN);
     }
 
-    visitUnary(u: UnaryExpression): ExpressionType | void {
+    visitUnary(u: UnaryExpression): Type | void {
       const rightType = u.right.acceptExpressionVisitor(this);
       if (!rightType) {
         return;
@@ -129,23 +135,23 @@ export namespace Typechecker {
 
     }
 
-    visitValAccessor(v: ValAccessor): ExpressionType | void {
+    visitValAccessor(v: ValAccessor): Type | void {
       throw new Error("Method not implemented.");
     }
 
-    visitLiteral(l: Literal): ExpressionType | void {
+    visitLiteral(l: Literal): Type | void {
       throw new Error("Method not implemented.");
     }
 
-    visitBinary(b: BinaryExpression): ExpressionType | void {
+    visitBinary(b: BinaryExpression): Type | void {
       throw new Error("Method not implemented.");
     }
 
-    visitComparison(c: ComparisonExpression): ExpressionType | void {
+    visitComparison(c: ComparisonExpression): Type | void {
       throw new Error("Method not implemented.");
     }
 
-    visitInstantiation(i: Instantiation): ExpressionType | void {
+    visitInstantiation(i: Instantiation): Type | void {
       throw new Error("Method not implemented.");
     }
 
@@ -189,10 +195,10 @@ export namespace Typechecker {
 
     private defineInCurrentScope(variableName: string, variableType: Type) {
       try {
-        Scopes.define(this.currentScope, variableName, variableType);
+        Scope.define(this.currentScope, variableName, variableType);
       } catch (error) {
-        if (error instanceof VariableAlreadyDefinedError) {
-          this.diagnostics.report("VARIABLE_ALREADY_DEFINED_IN_SCOPE", { templating: { variable: error.variableAlreadyDefined }});
+        if (error instanceof SymbolAlreadyDefinedError) {
+          this.diagnostics.report("VARIABLE_ALREADY_DEFINED_IN_SCOPE", { templating: { variable: error.symbolAlreadyDefined }});
         }
       }
     }
