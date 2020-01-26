@@ -1,9 +1,10 @@
-import {ModuleType} from "@dawn/analysis/types/ModuleType";
 import {ObjectType} from "@dawn/analysis/types/ObjectType";
+import {NativeType} from "@dawn/analysis/types/NativeType";
 
 export interface Type {
-  isModule(): this is ModuleType;
   isObject(): this is ObjectType;
+  isNative(): this is NativeType;
+
   getVisibility(): TypeVisibility;
 }
 

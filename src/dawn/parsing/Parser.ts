@@ -20,7 +20,7 @@ import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/Object
 import {Import} from "@dawn/lang/ast/Import";
 import {Program, ProgramContent} from "@dawn/lang/ast/Program";
 import ast from "@dawn/lang/ast/builder/Ast";
-import {tokenTypeToNativeType} from "@dawn/lang/NativeType";
+import {tokenTypeToPrimitiveType} from "@dawn/lang/PrimitiveType";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {ParseError} from "@dawn/parsing/ParseError";
 import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
@@ -298,7 +298,7 @@ export function parse(reader: TokenReader, reporter: DiagnosticReporter): Progra
 
     if (reader.match(TokenType.INT_NUMBER, TokenType.FLOAT_NUMBER)) {
       const token = reader.previous();
-      const valueType = tokenTypeToNativeType(token.type);
+      const valueType = tokenTypeToPrimitiveType(token.type);
 
       return ast.literal(token.value, valueType);
     }

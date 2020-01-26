@@ -1,6 +1,6 @@
 import {Accessor} from "@dawn/lang/ast/Accessor";
-import {Type} from "@dawn/analysis/types/Type";
-import {ModuleType} from "@dawn/analysis/types/ModuleType";
+import {Type, TypeVisibility} from "@dawn/analysis/types/Type";
+import {Scope} from "@dawn/analysis/Scope";
 
 export namespace TypeLookup {
 
@@ -14,33 +14,35 @@ export namespace TypeLookup {
     DOWNWARDS
   }
 
-  export function lookup(module: ModuleType, typeName: Accessor, direction: LookupDirection = LookupDirection.UPWARDS): Type | void {
-    const typeFound = module.members.get(typeName.name);
-    if (!typeFound) {
-      if (module.parent && direction === LookupDirection.UPWARDS) {
-        return lookup(module.parent, typeName, LookupDirection.UPWARDS);
-      }
-
-      return;
+  export function lookup(scope: Scope.ScopeData, typeName: Accessor, direction: LookupDirection = LookupDirection.UPWARDS): Type | void {
+    // If we do not have any other subaccessors, then all we have to do is resolve that type
+    if (!typeName.subAccessor) {
+      return lookupType(scope, typeName.name, direction);
     }
 
-    if (typeName.subAccessor) {
-      if (typeFound.isModule()) {
-        return lookup(typeFound, typeName.subAccessor, LookupDirection.DOWNWARDS);
-      }
-
-      return;
+    const childScope = scope.namedChildScopes.get(typeName.name);
+    if (childScope) {
+      return lookup(childScope, typeName.subAccessor, LookupDirection.DOWNWARDS);
     }
 
-    if (!canResolveType(direction, typeFound)) {
-      return;
+    if (scope.parent && direction === LookupDirection.UPWARDS) {
+      return lookup(scope.parent, typeName, LookupDirection.UPWARDS);
+    }
+  }
+
+  function lookupType(scope: Scope.ScopeData, typeName: string, direction: LookupDirection): Type | void {
+    const typeFound = scope.types.get(typeName);
+    if (typeFound && canResolveType(direction, typeFound)) {
+      return typeFound;
     }
 
-    return typeFound;
+    if (scope.parent && direction === LookupDirection.UPWARDS) {
+      return lookupType(scope, typeName, direction);
+    }
   }
 
   function canResolveType(direction: LookupDirection, typeFound: Type): boolean {
-    return !(direction === LookupDirection.DOWNWARDS  && !typeFound.isExported());
+    return !(direction === LookupDirection.DOWNWARDS  && typeFound.getVisibility() === TypeVisibility.INTERNAL);
   }
 }
 

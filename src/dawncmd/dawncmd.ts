@@ -13,7 +13,7 @@ import {DiagnosticSeverity} from "@dawn/ui/Diagnostic";
 import parserDiagnostics from '../dawn/ui/diagnostics/parserDiagnostics.json';
 import tokenizerDiagnostics from '../dawn/ui/diagnostics/tokenizerDiagnostics.json';
 import {DiagnosticMessageAssembler} from "@dawn/ui/DiagnosticMessageAssembler";
-import {Scope} from "@dawn/analysis/Scope";
+import {Scopes} from "@dawn/analysis/Scope";
 
 const fs = require('fs');
 const command = process.argv[2];
@@ -106,7 +106,7 @@ function parseProgram(tokens: Token[]): Program {
   return parsedProgram;
 }
 
-function parseSymbols(program: Program): Scope {
+function parseSymbols(program: Program): Scopes {
   const reporter = new InMemoryDiagnosticReporter(diagnosticMessageAssembler);
   const globalSymbols = new SymbolParser().parseAllSymbols(program, reporter);
 

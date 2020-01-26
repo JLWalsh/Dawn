@@ -5,15 +5,15 @@ import {ObjectSymbol} from "@dawn/analysis/symbols/ObjectSymbol";
 import treeify, {TreeObject} from 'treeify';
 import {ExportedSymbol} from "@dawn/analysis/symbols/ExportedSymbol";
 import {ISymbol} from "@dawn/analysis/symbols/ISymbol";
-import {Scope} from "@dawn/analysis/Scope";
+import {Scopes} from "@dawn/analysis/Scope";
 
 export class SymbolDumper {
 
-  static dumpToString(globalScope: Scope): string {
+  static dumpToString(globalScope: Scopes): string {
     return treeify.asTree(this.dumpScope(globalScope), true, false);
   }
 
-  private static dumpScope(scope: Scope): TreeObject {
+  private static dumpScope(scope: Scopes): TreeObject {
     const dump: any = {};
 
     scope.getAllSymbols().forEach(s => {

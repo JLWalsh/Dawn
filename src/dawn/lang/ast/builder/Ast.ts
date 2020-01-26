@@ -15,7 +15,7 @@ import {Statement, StatementVisitor} from "@dawn/lang/ast/Statement";
 import {ModuleContent, ModuleDeclaration} from "@dawn/lang/ast/declarations/ModuleDeclaration";
 import {ObjectDeclaration, ObjectValue} from "@dawn/lang/ast/declarations/ObjectDeclaration";
 import {ValDeclaration} from "@dawn/lang/ast/declarations/ValDeclaration";
-import {NativeType} from "@dawn/lang/NativeType";
+import {PrimitiveType} from "@dawn/lang/PrimitiveType";
 import {Literal} from "@dawn/lang/ast/Literal";
 import {BinaryExpression, BinaryOperator} from "@dawn/lang/ast/expressions/BinaryExpression";
 import {EqualityExpression, EqualityOperator} from "@dawn/lang/ast/expressions/EqualityExpression";
@@ -121,7 +121,7 @@ class AstNodeBuilder {
     };
   }
 
-  literal(value: any, valueType: NativeType): Literal {
+  literal(value: any, valueType: PrimitiveType): Literal {
     return { type: AstNodeType.LITERAL, value, valueType,
       acceptExpressionVisitor<T>(visitor: ExpressionVisitor<T>): T {
         return visitor.visitLiteral(this);

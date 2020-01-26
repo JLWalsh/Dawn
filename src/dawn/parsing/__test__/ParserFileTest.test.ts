@@ -8,7 +8,7 @@ import {tokenize} from "@dawn/parsing/Tokenizer";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {BinaryOperator} from "@dawn/lang/ast/expressions/BinaryExpression";
-import {NativeType} from "@dawn/lang/NativeType";
+import {PrimitiveType} from "@dawn/lang/PrimitiveType";
 import {NullDiagnosticReporter} from "@dawn/ui/NullDiagnosticReporter";
 
 describe('Parser file test', () => {
@@ -35,7 +35,7 @@ describe('Parser file test', () => {
         ast.moduleDeclaration('Shapes', [
           // val PI = 3.1516f
           ast.valDeclaration('PI',
-            ast.literal(3.1416, NativeType.FLOAT),
+            ast.literal(3.1416, PrimitiveType.FLOAT),
           ),
 
           // export object Rectangle { ... }
@@ -84,7 +84,7 @@ describe('Parser file test', () => {
                     ast.accessor('naivePow'),
                     ast.invocation([
                       ast.valAccessor(ast.accessor('circle', ast.accessor('radius'))),
-                      ast.literal(2, NativeType.INT),
+                      ast.literal(2, PrimitiveType.INT),
                     ]),
                   ),
                   BinaryOperator.MULTIPLY,
@@ -103,15 +103,15 @@ describe('Parser file test', () => {
           // val rectangle = Shapes.Rectangle { 10i, 20i }
           ast.valDeclaration('rectangle',
             ast.instantiation(ast.accessor('Shapes', ast.accessor('Rectangle')), [
-              ast.literal(10, NativeType.INT),
-              ast.literal(20, NativeType.INT),
+              ast.literal(10, PrimitiveType.INT),
+              ast.literal(20, PrimitiveType.INT),
             ]),
           ),
 
           // val circle = Shapes.Circle { radius: 30i }
           ast.valDeclaration('circle',
             ast.instantiation(ast.accessor('Shapes', ast.accessor('Circle')), [
-              { key: 'radius', value: ast.literal(30, NativeType.INT) }
+              { key: 'radius', value: ast.literal(30, PrimitiveType.INT) }
             ]),
           ),
 

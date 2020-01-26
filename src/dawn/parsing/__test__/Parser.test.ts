@@ -3,7 +3,7 @@ import {tokenize} from "@dawn/parsing/Tokenizer";
 import {StringIterableReader} from "@dawn/parsing/StringIterableReader";
 import {Program, ProgramContent} from "@dawn/lang/ast/Program";
 import {parse} from "@dawn/parsing/Parser";
-import {NativeType} from "@dawn/lang/NativeType";
+import {PrimitiveType} from "@dawn/lang/PrimitiveType";
 import ast from "@dawn/lang/ast/builder/Ast";
 import {DiagnosticReporter} from "@dawn/ui/DiagnosticReporter";
 import {Statement} from "@dawn/lang/ast/Statement";
@@ -26,7 +26,7 @@ describe('Parser', () => {
         parseInFunctionBody.createExpectedProgram(
           ast.valAccessor(ast.accessor('printSomething'),
             ast.invocation([
-              ast.literal(10, NativeType.INT),
+              ast.literal(10, PrimitiveType.INT),
               ast.valAccessor(ast.accessor('nested'), ast.invocation()),
               ast.valAccessor(ast.accessor('bob')),
             ])
@@ -65,8 +65,8 @@ describe('Parser', () => {
             ast.instantiation(
               ast.accessor('Bob'),
               [
-                ast.literal(20, NativeType.INT),
-                ast.literal(33, NativeType.INT),
+                ast.literal(20, PrimitiveType.INT),
+                ast.literal(33, PrimitiveType.INT),
               ],
             ),
           )
@@ -143,7 +143,7 @@ describe('Parser', () => {
         ast.moduleDeclaration('test', [
           ast.export(
             ast.valDeclaration('X',
-              ast.literal(20, NativeType.INT)
+              ast.literal(20, PrimitiveType.INT)
             ),
           ),
           ast.objectDeclaration('TestObject', []),
@@ -164,7 +164,7 @@ testFunction() {
 
       const expected =
         ast.functionDeclaration('testFunction', [], null, [
-          ast.valDeclaration('x', ast.literal(10, NativeType.INT)),
+          ast.valDeclaration('x', ast.literal(10, PrimitiveType.INT)),
           ast.return(
             ast.valAccessor(ast.accessor('x')),
           ),
@@ -185,7 +185,7 @@ testFunction(one: int): float {
           ast.return(
             ast.literal(
               10,
-              NativeType.INT,
+              PrimitiveType.INT,
             ),
           ),
         ]);
@@ -209,7 +209,7 @@ testFunction(one: int, two: float, three: somemodule.AnObject) {
           ast.return(
             ast.literal(
               10,
-              NativeType.INT,
+              PrimitiveType.INT,
             ),
           ),
         ]);
