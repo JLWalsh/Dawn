@@ -8,6 +8,10 @@ export class ValSymbol implements ISymbol {
     private readonly val: ValDeclaration,
   ) {}
 
+  getNode() {
+    return this.val;
+  }
+
   getName(): string {
     return this.val.name;
   }

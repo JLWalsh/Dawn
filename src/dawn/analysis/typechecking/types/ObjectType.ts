@@ -21,4 +21,8 @@ export class ObjectType implements Type {
   isObject() {
     return true;
   }
+
+  isNative() {
+    return false;
+  }
 }

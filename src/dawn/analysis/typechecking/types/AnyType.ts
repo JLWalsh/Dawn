@@ -9,4 +9,7 @@ export class AnyType implements Type {
     return false;
   }
 
+  isNative() {
+    return false;
+  }
 }
