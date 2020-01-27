@@ -1,27 +1,20 @@
 import math
 import io
 
+module test {
+
+    object a {}
+
+    export object b {}
+}
+
 module shapes {
 
     export object Rectangle {
         width: int,
-        height: int
-    }
-
-    object A {
-        a: B
-    }
-
-    object B {
-        b: D
-    }
-
-    object D {
-        d: boolean
-    }
-
-    object C {
-        c: B
+        height: int,
+        a: test.a
+        b: test.b
     }
 
     val permanent = Rectangle { 20i, 30i }
@@ -31,7 +24,11 @@ module shapes {
     }
 
     export diagonalLength(rect: Rectangle): float {
-
+        val area = calculateArea(rect)
+        # Resolve symbol calculateArea in scope shapes
+        # Ensure calculateArea is a function
+        # Ensure prototype exists for calculateArea(Rectangle)
+        # Add area of type int to currentScope
         return math.sqrt(math.pow(rect.width, 2i) + math.pow(rect.height, 2i))
     }
 }
