@@ -8,6 +8,10 @@ export class ObjectSymbol implements ISymbol {
     private readonly visibility: ISymbolVisibility,
   ) {}
 
+  getNode(): ObjectDeclaration {
+    return this.object;
+  }
+
   getName(): string {
     return this.object.name;
   }
