@@ -25,4 +25,9 @@ export class ObjectType implements Type {
   isNative() {
     return false;
   }
+
+  describe(): string {
+    // TODO make describe use the key values
+    return "object";
+  }
 }

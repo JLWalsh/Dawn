@@ -6,9 +6,15 @@ module test {
     object a {}
 
     export object b {}
+
+    test() {
+        val x = shapes.PI
+    }
 }
 
 module shapes {
+
+    export val PI = 3.1416f
 
     export object Rectangle {
         width: int,

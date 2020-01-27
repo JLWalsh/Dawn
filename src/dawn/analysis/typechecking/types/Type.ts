@@ -6,4 +6,6 @@ export interface Type {
   isAny(): this is AnyType;
   isObject(): this is ObjectType;
   isNative(): this is NativeType;
+
+  describe(): string;
 }

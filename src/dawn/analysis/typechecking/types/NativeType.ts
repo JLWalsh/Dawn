@@ -11,6 +11,10 @@ export class NativeType implements Type {
     private readonly keyword: Keyword,
   ) {}
 
+  isSameAs(other: NativeType): boolean {
+    return this.keyword === other.keyword;
+  }
+
   isAny() {
     return false;
   }
@@ -21,5 +25,9 @@ export class NativeType implements Type {
 
   isNative() {
     return true;
+  }
+
+  describe(): string {
+    return `(native) ${this.keyword}`;
   }
 }

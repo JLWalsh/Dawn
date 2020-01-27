@@ -12,4 +12,8 @@ export class AnyType implements Type {
   isNative() {
     return false;
   }
+
+  describe(): string {
+    return "any";
+  }
 }
